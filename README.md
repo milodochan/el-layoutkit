@@ -470,53 +470,61 @@ FilterOperatorEnum = {
 ## 10. 使用示例
 
 ```js
-const { table, tablebar, filter, toolbar, formMap, dialog, message } = useConfig()
+<template>
+    <div>
+        <LayoutPage :table="table" :filter="filter" :toolbar="toolbar" :tablebar="tablebar" :dialog="dialog" />
+    </div>
+</template>
 
-// 注册表单
-const userForm = formMap.register('userForm')
-userForm.setRow()
-  .setColumn('姓名', 'name')
-  .setColumn('年龄', 'age', col => col.setType(FormEnum.INPUT_NUMBER).onRequire())
+<script setup>
+  const { table, tablebar, filter, toolbar, formMap, dialog, message } = useConfig()
 
-// 筛选部分
-filter.register('name', '姓名')
-filter.register('age', '年龄')
+  // 注册表单
+  const userForm = formMap.register('userForm')
+  userForm.setRow()
+    .setColumn('姓名', 'name')
+    .setColumn('年龄', 'age', col => col.setType(FormEnum.INPUT_NUMBER).onRequire())
 
-// dialog
-const userDialog = dialog.register('')
-            .setAttr({ width: '600px' })
-            .setBtn('保存', async (currentDialog, componentRef) => {
-                try {
-                    // 表单验证
-                    await componentRef.valid()  
-                    // 调用接口
-                    const formData = componentRef.formData
-                    formData.id 
-                      ? await api.addUser(componentRef.formData) 
-                      : await api.updateUser(componentRef.formData)
-                    currentDialog.hide()
-                    message.success('保存成功')
-                    table.reload()
-                } catch (e) {
-                    console.log('表单校验未通过', e)
-                }
-            }, 'primary')
+  // 筛选部分
+  filter.register('name', '姓名')
+  filter.register('age', '年龄')
 
-// 工具栏
-toolbar.register('add', '添加').on(async () => {
-    userForm.setData({ name: '', age: 0 })
-    userDialog.setTitle('添加用户').setForm(userForm).show()
-})
+  // dialog
+  const userDialog = dialog.register('')
+              .setAttr({ width: '600px' })
+              .setBtn('保存', async (currentDialog, componentRef) => {
+                  try {
+                      // 表单验证
+                      await componentRef.valid()  
+                      // 调用接口
+                      const formData = componentRef.formData
+                      formData.id 
+                        ? await api.addUser(componentRef.formData) 
+                        : await api.updateUser(componentRef.formData)
+                      currentDialog.hide()
+                      message.success('保存成功')
+                      table.reload()
+                  } catch (e) {
+                      console.log('表单校验未通过', e)
+                  }
+              }, 'primary')
 
-// table工具栏
-tablebar.register('edit', '编辑').on((item) => {
-    userForm.setData(item)
-    userDialog.setTitle('编辑用户').setForm(userForm).show()
-})
+  // 工具栏
+  toolbar.register('add', '添加').on(async () => {
+      userForm.setData({ name: '', age: 0 })
+      userDialog.setTitle('添加用户').setForm(userForm).show()
+  })
 
-// 表格加载
-table.registerLoader(async ({ index, size }) => {
-  const res = await api.getUsers({ page: index, size })
-  return { records: res.data, total: res.total }
-})
+  // table工具栏
+  tablebar.register('edit', '编辑').on((item) => {
+      userForm.setData(item)
+      userDialog.setTitle('编辑用户').setForm(userForm).show()
+  })
+
+  // 表格加载
+  table.registerLoader(async ({ index, size }) => {
+    const res = await api.getUsers({ page: index, size })
+    return { records: res.data, total: res.total }
+  })
+</script>
 ```
