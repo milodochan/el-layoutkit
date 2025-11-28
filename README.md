@@ -509,7 +509,7 @@ toolbar.register('add', '添加').on(async () => {
 })
 
 // table工具栏
-tablebar.register('editRemark', '编辑').on((item) => {
+tablebar.register('edit', '编辑').on((item) => {
     userForm.setData(item)
     userDialog.setTitle('编辑用户').setForm(userForm).show()
 })
