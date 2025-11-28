@@ -1,0 +1,35 @@
+{
+    "name": "@layoutkit/el-layoutkit",
+    "version": "0.1.12",
+    "main": "dist/el-layoutkit.cjs.js",
+    "module": "dist/el-layoutkit.es.js",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./dist/el-layoutkit.es.js",
+            "require": "./dist/el-layoutkit.cjs.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "clean": "rm -rf dist"
+    },
+    "peerDependencies": {
+        "element-plus": "^2.3.0",
+        "vue": "^3.2.0"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.0.0",
+        "@vitejs/plugin-vue-jsx": "^5.0.0",
+        "sass": "^1.63.0",
+        "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "@layoutkit/el-layoutkit": "^0.1.4",
+        "crypto-js": "^4.2.0"
+    }
+}
