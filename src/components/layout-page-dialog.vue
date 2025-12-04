@@ -85,7 +85,7 @@ watch(() => visible, (val) => {
     <div>
         <el-dialog v-model="visible" :title="instance?.title ?? ''" :align-center="instance?.center ?? false"
             :width="instance?.width ?? '50%'" :fullscreen="instance?.fullscreen ?? false" destroy-on-close
-            :draggable="instance?.draggable ?? false" @close="destroy()">
+            :draggable="instance?.draggable ?? false" @close="destroy()" custom-class="full-height-dialog">
             <!-- 内容区域：元素 Plus 官方 loading -->
             <div v-loading="instance?.loading" element-loading-text="加载中..."
                 element-loading-background="rgba(255, 255, 255, 0.7)" style="min-height: 150px;">
@@ -106,7 +106,6 @@ watch(() => visible, (val) => {
                         </el-button>
                     </template>
                 </div>
-
             </template>
         </el-dialog>
     </div>
