@@ -4,7 +4,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { FilterEnum } from '../enum/FilterEnum'
 import LayoutPageColumn from './layout-page-column.vue'
 import LayoutPageDialog from './layout-page-dialog.vue'
+import { userMessage } from '../core/userMessage'
 
+const message = userMessage()
 const selectedNodes = ref()
 const props = defineProps({
     /**
@@ -48,13 +50,6 @@ const props = defineProps({
 })
 
 const filterForm = ref([])
-const selectProps = {
-    value: 'value',
-    label: 'label',
-    options: 'options',
-    disabled: 'disabled',
-}
-
 const tableFilter = computed(() => props.filter ?? { data: [] })
 const tableColumns = computed(() => props.table?.columns ?? [])
 const dataTable = computed(() => {
@@ -120,6 +115,23 @@ const onFilterChange = (filterType) => {
     }
 
     if (props.filter) {
+        for (const item of filterForm.value) {
+            if (!item.required) continue
+
+            const v = item.value
+
+            const isEmpty =
+                v === null ||
+                v === undefined ||
+                v === '' ||
+                (Array.isArray(v) && v.length === 0)
+
+            if (isEmpty) {
+                message.warning(`请填写【${item.label}】字段`)
+                return
+            }
+        }
+
         filterData = props.filter._buildFunc(filterForm.value)
     }
 
@@ -179,7 +191,6 @@ const onToolBarEvent = (item, e) => {
     }
 }
 
-
 watch(
     () => props.filter?.data ?? [],
     (val) => {
@@ -193,7 +204,15 @@ watch(
 )
 
 onMounted(() => {
-    if (props.table) props.table.load()
+    if (props.table) {
+        let filterData = {}
+        if (props.filter) {
+            filterData = props.filter._buildFunc(filterForm.value)
+        }
+
+        props.table._setQueryParams(filterData)
+        props.table.load()
+    }
 })
 </script>
 
@@ -217,8 +236,10 @@ onMounted(() => {
 
                             <!-- 下拉框 -->
                             <el-select v-else-if="item.fieldType === FilterEnum.SELECT" v-model="item.value"
-                                :placeholder="item.placeholder" :style="item.style" :options="item.options"
-                                :props="selectProps" />
+                                :placeholder="item.placeholder" :style="item.style">
+                                <el-option v-for="option in item.options" :key="option.value" :label="option.label"
+                                    :value="option.value" />
+                            </el-select>
 
                             <!-- 日期 -->
                             <el-date-picker v-else-if="item.fieldType === FilterEnum.DATE" v-model="item.value"

@@ -1,5 +1,5 @@
 import { FormEnum } from '../enum/FormEnum'
-import { reactive, readonly, markRaw, ref } from 'vue'
+import { reactive, readonly, markRaw, ref, inject, provide } from 'vue'
 
 export function useForm() {
   const _forms = ref([])
@@ -30,6 +30,14 @@ export function useForm() {
     register(id = '') {
       id = id || `form_${Date.now()}_${_forms.value.length}`
 
+      // 获取已有 map（若无则创建）
+      let slotMapRef = inject('formSlotMap', null)
+
+      if (!slotMapRef) {
+        slotMapRef = ref(new Map())
+        provide('formSlotMap', slotMapRef)
+      }
+
       const existing = _forms.value.find(f => f.id === id)
       if (existing) return existing
 
@@ -54,7 +62,8 @@ export function useForm() {
                   options: []
                 },
                 hideFunc: () => true,
-                command: () => {}
+                attrFunc: null,
+                command: () => { }
               }
 
               newRow.push(column)
@@ -68,6 +77,7 @@ export function useForm() {
                 setComponent(comp) { if (comp) column.component = markRaw(comp); return columnApi },
                 hide(fn) { column.hideFunc = fn; return columnApi },
                 on(fn) { column.command = fn; return columnApi },
+                change(fn) { column.attrFunc = fn; return columnApi },
                 setColumn: rowApi.setColumn
               }
 

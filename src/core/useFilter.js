@@ -31,6 +31,7 @@ export function useFilter() {
                 placeholder: '' || `请输入${label}`,
                 options: [],
                 style: undefined,
+                required: false,
                 setOptions(options) {
                     this.fieldType = FilterEnum.SELECT
                     this.options = options
@@ -55,7 +56,8 @@ export function useFilter() {
                 setPlaceholder(placeholder) {
                     this.placeholder = placeholder
                     return this
-                }
+                },
+                onRequire() { this.required = true; return this }
             }
             _filter.value.push(item)
             return item

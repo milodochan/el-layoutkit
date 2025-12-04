@@ -1,6 +1,9 @@
 export { default as LayoutDialog } from './components/layout-page-dialog.vue'
 export { default as LayoutPage } from './components/layout-page.vue'
 export { default as LayoutForm } from './components/layout-form.vue'
+export { default as DialogContentSlot } from './components/dialog-content-slot.vue'
+export { default as FormItemSlot } from './components/form-item-slot.vue'
+export { default as ColumnItemSlot } from './components/column-item-slot.vue'
 
 // Hooks / store
 export { useDialog } from './core/useDialog'

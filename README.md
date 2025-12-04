@@ -7,16 +7,86 @@
 npm install @layoutkit/el-layoutkit:latest
 ```
 
+# 导出内容总览
+以下是该包对外全部导出的内容列表：
+## 一、组件（Components）
+| 组件名                   | 说明                         |
+| --------------------- | -------------------------- |
+| **LayoutDialog**      | 弹窗包装组件，支持动态内容加载、缓存、按钮自定义等  |
+| **LayoutPage**        | 页面级布局组件，用于表格 + 工具栏 + 分页等场景 |
+| **LayoutForm**        | 动态表单组件，根据配置自动渲染表单项         |
+| **DialogContentSlot** | Dialog 内容插槽扩展组件            |
+| **FormItemSlot**      | 表单项插槽扩展组件                  |
+| **ColumnItemSlot**    | 表格列插槽扩展组件                  |
+
+使用方式：
+```
+import { LayoutDialog, LayoutPage, LayoutForm } from '@layoutkit/el-layoutkit'
+```
+## 二、Hooks & Store
+
+### useConfig
+用于管理动态配置，包括表单配置、表格列、过滤器、工具栏等。
+
+**导入：**
+```js
+import { useConfig } from '@layoutkit/el-layoutkit'
+```
+
+### useDialog
+全局对话框管理，用于打开、关闭、设置标题、注册按钮事件以及异步加载组件（支持缓存）。
+
+**导入：**
+```js
+import { useDialog } from '@layoutkit/el-layoutkit'
+```
+
+### useForm
+表单逻辑封装，包含动态表单生成、校验、提交、格式化等能力。
+
+**导入：**
+```js
+import { useForm } from '@layoutkit/el-layoutkit'
+```
+
+### userMessage
+基于 Element Plus 的消息封装，提供更简单的全局提示调用方式。
+
+**导入：**
+```js
+import { userMessage } from '@layoutkit/el-layoutkit'
+```
+
+## 三、枚举类型（Enums）
+| 枚举                     | 作用                                     |
+| ---------------------- | -------------------------------------- |
+| **FilterEnum**         | 页面筛选器类型（input / select / date 等）       |
+| **FilterOperatorEnum** | 筛选器操作符（=、like、between 等）               |
+| **FormEnum**           | 表单项类型定义（input、textarea、select、radio 等） |
+
+示例：
+```js
+import { FormEnum } from '@layoutkit/el-layoutkit'
+
+if (field.type === FormEnum.SELECT) { ... }
+```
+
+
 # 快速开始（Usage）
 
 * 需要在项目中使用权限管理按钮等需要在main.js中设置
 ```js
 app.config.globalProperties.$layoutkitPerEnabled = true
 ```
-* 启用权限是，权限数据需要设置
+* 如果开启权限，需要注入权限数据至store中
 ```js
 import { store } from '@layoutkit/el-layoutkit'
-store.set(data)   // 请在登录系统后调用这个方法设置数据，数据格式要求未字符串数组
+
+# 需要登录系统后加载权限数据时设置
+api.getPers().then(res => {
+  store.set(res.data)   // 请在登录系统后调用这个方法设置数据，数据格式要求未字符串数组
+})
+
 ```
 * 后端有自己的筛选数据格式时，支持重写数据格式， items只有筛选有内容时才有数据，默认未空数组
 ```js
@@ -30,21 +100,117 @@ app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items 
   value: ''               // 查询值
 }]
 ```
-* 使用参考
+
+# 参考示例
+
 ```js
-
-<script setup>
-import { LayoutPage, useConfig } from '@layoutkit/el-layoutkit'
-
-const { table, toolbar, tablebar, filter, dialog, formMap, keyMap, message, propsData } = useConfig()
-</script>
-
 <template>
     <div>
         <LayoutPage :table="table" :filter="filter" :toolbar="toolbar" :tablebar="tablebar" :dialog="dialog" />
+        <!--表格列示例-->
+        <ColumnItemSlot name="name1">
+          <template #default="{ attrs }">
+            <el-tag type='info' v-if="attrs.gender === 0">男</el-tag>
+            <el-tag type='primary' v-if="attrs.gender === 1">女</el-tag>
+          </template>
+        </ColumnItemSlot>
+        <!--表单项示例-->
+        <FormItemSlot name="name2">
+          <!--emit：其中包含update更新方法-->
+          <!--fieldAttr：表单字段属性-->
+          <!--data：表单数据-->
+          <template #default="{ data, fieldAttr, emit }">
+            <el-select v-model="data.gender"
+              @change="(e) => emit('update', data.gender)">
+              <el-option label="男" value="0" />
+              <el-option label="女" value="1" />
+          </el-select>
+          </template>
+        </FormItemSlot>
+        <!--Dialog 显示内容示例-->
+        <DialogContentSlot name="name3">
+            <span>测试</span>
+        </DialogContentSlot>
     </div>
 </template>
 
+<script setup>
+  import {
+    LayoutPage, useConfig, FormEnum,
+    DialogContentSlot, FormItemSlot, ColumnItemSlot
+  } from '@layoutkit/el-layoutkit'
+  const { table, tablebar, filter, toolbar, formMap, dialog, message } = useConfig()
+
+  // 注册表单
+  const userForm = formMap.register('userForm')
+  userForm.setRow()
+    .setColumn('姓名', 'name')
+    .setColumn('年龄', 'age', col => col.setType(FormEnum.INPUT_NUMBER).onRequire())
+  // 插槽示例
+  userForm.setRow().
+    .setColumn('性别', 'gender', col => col.setComponent('name2'))
+
+  // 筛选部分
+  filter.register('name', '姓名')
+  filter.register('age', '年龄')
+
+  // dialog
+  const userDialog = dialog.register()
+              .setAttr({ width: '600px' })
+              .setBtn('保存', async (currentDialog, componentRef) => {
+                  try {
+                      // 表单验证
+                      await componentRef.valid()  
+                      // 调用接口
+                      const formData = componentRef.formData
+                      formData.id 
+                        ? await api.addUser(componentRef.formData) 
+                        : await api.updateUser(componentRef.formData)
+                      currentDialog.hide()
+                      message.success('保存成功')
+                      table.reload()
+                  } catch (e) {
+                      console.log('表单校验未通过', e)
+                  }
+              }, 'primary')
+
+  // 工具栏
+  toolbar.register('add', '添加').on(async () => {
+      userForm.setData({ name: '', age: 0 })
+      userDialog.setTitle('添加用户').setForm(userForm).show()
+  })
+
+  // 工具栏, 测试dialog内容插槽
+  toolbar.register('testslot', '测试dialog内容插槽').on(async () => {
+      dialog.register('测试dialog内容插槽').setComponent('name3').show()
+  })
+
+  // table工具栏
+  tablebar.register('edit', '编辑').on((item) => {
+      userForm.setData(item)
+      userDialog.setTitle('编辑用户').setForm(userForm).show()
+  })
+
+  // 表格加载
+  table.setColumn('name', '姓名')
+  table.setColumn('age', '年龄')
+  table.setColumn('gender', '性别').setTemplate((item) => {
+    return {
+      component: 'name1',
+      props: {
+        gender: item.gender
+      }
+    }
+  })
+  table.registerLoader(async (pageInfo, pageParams) => {
+    const res = await api.getUsers({
+        pageNum: page.index,
+        pageSize: page.size,
+        data: pageParams
+    })
+    return { records: res.list, total: res.total }
+  })
+</script>
 ```
 ---
 
@@ -75,6 +241,7 @@ table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => r
 * `setTemplate(template: Function)`
   重写列的内容，支持返回一般内容以及使用组件返回
   ```js
+  # 使用外部引入的组件
   table.setColumn('field', 'nickname').setTemplate((item) => {
         return ''
         // or
@@ -84,6 +251,28 @@ table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => r
             props: {}    // 透传属性
         }
     })
+
+  # 使用插槽组件
+  <template>
+    <ColumnItemSlot name="testSlot">
+      <template #default="{ attrs }">
+          <span>{{ attrs.nickname }}</span>
+      </template>
+  </ColumnItemSlot>
+  </template>
+
+  <scipt setup>
+  table.setColumn('nickname', 'nickname').setTemplate((item) => {
+      return ''
+      // or
+      return {
+          component: 'testSlot', // ColumnItemSlot的name
+          props: {
+            nickname: item.nickname
+          }    // 透传属性
+      }
+  })
+  </script>
   ```
 
 #### `setPageSize(size: number)`
@@ -139,6 +328,7 @@ filter.register('name', '姓名')
 | `setValue(val: any)`             | 设置默认值                  |
 | `setOperator(operator: FilterOperatorEnum)`  | 设置查询操作符，参考包中FilterOperatorEnum枚举              |
 | `setPlaceholder(text: string)`   | 设置输入提示                 |
+| `onRequire()`   | 开启筛选必须输入验证                 |
 
 #### `event(data: Object)`
 触发筛选事件并重新加载表格。
@@ -316,7 +506,7 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
 
   ##### columnApi 方法
 
-  * `setOptions(options)` - 设置选项列表。
+  * `setOptions(options)` - 设置选项列表, 传入的类型需要动态刷新的情况，传入ref对象。
   * `setType(type)` - 设置字段类型 (FormEnum)。
   * `setPlaceholder(text)` - 设置占位符文本。
   * `onRequire()` - 设置必填字段。
@@ -337,22 +527,29 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
     ```
   * `hide(fn)` - 组件隐藏回调方法。
   * `on(fn)` - 组件事件。
-  * `setColumn()` - 链式继续创建列。
-
-```js
-const testForm = formMap.register('userForm')
-testForm.setRow()
-    .setColumn('姓名', 'name', col => col.setPlaceholder('请输入姓名').onRequire())
-    .setColumn('性别', 'gender', col => col.setType(FormEnum.SELECT).setOptions([{label:'男', value:'M'}, {label:'女', value:'F'}]))
-```
-
+  * `change(fn)` - 组件改变回调，例如：
+    ```js
+    form.setRow().setColumn('nickname', 'nickname', col => col
+      .setType(FormEnum.SELECT)
+      .setOptions(optionArr)
+      .change((item, fieldAttr) => {
+          fieldAttr.multiple = item.questionType === 1
+      })
+      .onRequire())
+    ```
+* `setColumn()` - 链式继续创建列。
+  ```js
+  const testForm = formMap.register('userForm')
+  testForm.setRow()
+      .setColumn('姓名', 'name', col => col.setPlaceholder('请输入姓名').onRequire())
+      .setColumn('性别', 'gender', col => col.setType(FormEnum.SELECT).setOptions([{label:'男', value:'M'}, {label:'女', value:'F'}]))
+  ```
 * `setData(formData)` - 设置整个表单的数据。
+  ```js
+  testForm.setData({ name: 'Bob', gender: 'M' })
+  ```
 
-```js
-testForm.setData({ name: 'Bob', gender: 'M' })
-```
-
-* `formData` - 表单实例返回数据，详见最后的示例
+* `formData` - 表单实例返回数据，详见参考示例
 
 
 完整示例
@@ -438,10 +635,12 @@ FormEnum = {
 
 ```ts
 FilterEnum = {
-  TEXT: 'text',
-  SELECT: 'select',
-  DATE: 'date',
-  NUMBER: 'number'
+    TEXT: 'text',
+    NUMBER: 'number',
+    SELECT: 'select',
+    DATE: 'date',
+    DATE_RANGE: 'daterange',
+    SWITCH: 'switch',
 }
 ```
 
@@ -467,64 +666,3 @@ FilterOperatorEnum = {
 
 ---
 
-## 10. 使用示例
-
-```js
-<template>
-    <div>
-        <LayoutPage :table="table" :filter="filter" :toolbar="toolbar" :tablebar="tablebar" :dialog="dialog" />
-    </div>
-</template>
-
-<script setup>
-  const { table, tablebar, filter, toolbar, formMap, dialog, message } = useConfig()
-
-  // 注册表单
-  const userForm = formMap.register('userForm')
-  userForm.setRow()
-    .setColumn('姓名', 'name')
-    .setColumn('年龄', 'age', col => col.setType(FormEnum.INPUT_NUMBER).onRequire())
-
-  // 筛选部分
-  filter.register('name', '姓名')
-  filter.register('age', '年龄')
-
-  // dialog
-  const userDialog = dialog.register('')
-              .setAttr({ width: '600px' })
-              .setBtn('保存', async (currentDialog, componentRef) => {
-                  try {
-                      // 表单验证
-                      await componentRef.valid()  
-                      // 调用接口
-                      const formData = componentRef.formData
-                      formData.id 
-                        ? await api.addUser(componentRef.formData) 
-                        : await api.updateUser(componentRef.formData)
-                      currentDialog.hide()
-                      message.success('保存成功')
-                      table.reload()
-                  } catch (e) {
-                      console.log('表单校验未通过', e)
-                  }
-              }, 'primary')
-
-  // 工具栏
-  toolbar.register('add', '添加').on(async () => {
-      userForm.setData({ name: '', age: 0 })
-      userDialog.setTitle('添加用户').setForm(userForm).show()
-  })
-
-  // table工具栏
-  tablebar.register('edit', '编辑').on((item) => {
-      userForm.setData(item)
-      userDialog.setTitle('编辑用户').setForm(userForm).show()
-  })
-
-  // 表格加载
-  table.registerLoader(async ({ index, size }) => {
-    const res = await api.getUsers({ page: index, size })
-    return { records: res.data, total: res.total }
-  })
-</script>
-```

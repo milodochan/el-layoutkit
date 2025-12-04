@@ -16,10 +16,10 @@ export function useConfig() {
     const toolbar = useToolBar(keyMap)
     // 列表工具栏
     const tablebar = useTableBar(keyMap)
-    // 表格属性设置
-    const table = useTable()
     // 表格筛选
     const filter = useFilter()
+    // 表格属性设置
+    const table = useTable()
     // 表单
     const formMap = useForm()
     // 消息和确认框

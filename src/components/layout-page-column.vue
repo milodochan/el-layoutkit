@@ -1,29 +1,35 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject, ref } from 'vue'
 
 const props = defineProps({
     template: [String, Object, Function],
     data: Object
 })
 
+// 提供默认空 Map，防止 inject 失败
+const isSlot = ref(false)
+const columnSlotMap = inject('columnSlotMap', ref(new Map()))
 function resolve(template, data) {
-    if (typeof template === 'string') {
-        return { type: 'html', content: template }
-    } else if (typeof template === 'function') {
+    let compType = typeof template
+    if (compType === 'function') {
         const result = template(data)
-        if (typeof result === 'string') {
-            return { type: 'html', content: result }
-        } else if (result?.component) {
-            return { type: 'component', component: result.component, props: result.props || {}, content: result.content ?? null }
-        } else {
-            return { type: 'component', component: result, props: {}, content: null }
-        }
-    } else if (typeof template === 'object') {
-        return { type: 'component', component: template, props: data, content: null }
-    }
+        let comp = result?.component
+        if (comp) {
+            // 是字符串 key，尝试从 slotMap 查找组件
+            if (typeof comp === 'string' && columnSlotMap.value.has(comp)) {
+                isSlot.value = true
+                comp = columnSlotMap.value.get(comp)
+            }
 
-    console.warn('无效模板', template)
-    return { type: 'html', content: '' }
+            return { type: 'component', component: comp, props: result.props || {}, content: result.content ?? null }
+        }
+        else {
+            return { type: 'html', content: String(result ?? '') }
+        }
+    }
+    else {
+        return { type: 'html', content: String(template ?? '') }
+    }
 }
 
 const renderInfo = computed(() => resolve(props.template, props.data))
@@ -31,7 +37,10 @@ const renderInfo = computed(() => resolve(props.template, props.data))
 
 <template>
     <span v-if="renderInfo.type === 'html'" v-html="renderInfo.content" />
-    <component v-else-if="renderInfo.type === 'component'" :is="renderInfo.component" v-bind="renderInfo.props">
+    <component v-else-if="renderInfo.type === 'component' && !isSlot" :is="renderInfo.component"
+        v-bind="renderInfo.props">
         {{ renderInfo.content }}
     </component>
+    <component v-else-if="renderInfo.type === 'component' && isSlot" :is="renderInfo.component"
+        :props="renderInfo.props" :content="renderInfo.content" />
 </template>

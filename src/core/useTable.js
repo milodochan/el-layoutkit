@@ -1,11 +1,19 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, inject, provide } from 'vue'
 import { userMessage } from './userMessage'
 
 export function useTable() {
+    // 获取已有 map（若无则创建）
+    let slotMapRef = inject('columnSlotMap', null)
+
+    if (!slotMapRef) {
+        slotMapRef = ref(new Map())
+        provide('columnSlotMap', slotMapRef)
+    }
+
     const message = userMessage()
     const _table_columns = ref([])
     const _table_data = ref([])
-    const _table_query_params = ref([])
+    const _table_query_params = ref({})
     const _loadEvent = ref(null)
     const table = reactive({
         tableType: 'default',
