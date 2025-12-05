@@ -4,30 +4,37 @@ export function useToolBar(keyMap) {
     const _toolbar_actions = ref([])
     const toolbar = reactive({
         actions: readonly(_toolbar_actions.value),
-        register: (id, label, type = 'primary', icon = '', command = () => { }) => {
-            const perKey = keyMap.getPer(id)
-            _toolbar_actions.value.push({ id, perKey, label, icon, type, command })
+        register: (label, callback) => {
+            let id = `action_${Date.now()}_${_toolbar_actions.value.length}`
+            let perKey = keyMap.getPer(id)
+            const obj = { id, perKey, label, icon: '', type: 'primary', _command: () => { } }
+            _toolbar_actions.value.push(obj)
 
-            const action = _toolbar_actions.value.find(a => a.id === id)
-            return {
-                ...action,
-                on(fn) {
-                    action.command = fn
-                    return this
-                }
+            const api = {
+                enabledPer(id) {
+                    obj.id = id
+                    obj.perKey = keyMap.getPer(id)
+                    return api
+                },
+                setAttr(attrs = {}) {
+                    if ('icon' in attrs) obj.icon = attrs.icon
+                    if ('type' in attrs) obj.type = attrs.type
+                    return api
+                },
+                on(fn) { obj._command = fn; return api }
             }
-        },
-        event(id, fn) { //待删除
-            id = keyMap.getPer(id)
-            const action = _toolbar_actions.value.find(a => a.id === id)
-            if (action) {
-                action.command = fn
-            } else {
-                console.warn(`未找到 toolbar 动作 id = '${id}'`)
+
+            if (typeof callback === 'function') {
+                callback(api)
+                return api
+            }
+
+            return {
+                ...obj,
+                ...api
             }
         },
         get(id) {
-            id = keyMap.getPer(id)
             const action = _toolbar_actions.value.find(a => a.id === id)
             if (!action) {
                 console.warn(`未找到 toolbar 动作 id = '${id}'`)
@@ -38,7 +45,7 @@ export function useToolBar(keyMap) {
             return {
                 ...action,
                 on(fn) {
-                    action.command = fn
+                    action._command = fn
                     return this
                 }
             }

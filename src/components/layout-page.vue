@@ -100,7 +100,7 @@ const onPageSizeChange = (event) => {
 const onPageChange = (event) => {
     if (props.table) {
         props.table.pagination.index = event
-        props.table.load()
+        props.table._load()
     }
 }
 
@@ -109,35 +109,15 @@ const onFilterChange = (filterType) => {
     let filterData = {}
     if (!filterType) {
         // 清除数据
-        filterForm.value.forEach(item => {
+        filterForm.value.forEach((item, index) => {
             item.value = ''
         })
     }
 
-    if (props.filter) {
-        for (const item of filterForm.value) {
-            if (!item.required) continue
-
-            const v = item.value
-
-            const isEmpty =
-                v === null ||
-                v === undefined ||
-                v === '' ||
-                (Array.isArray(v) && v.length === 0)
-
-            if (isEmpty) {
-                message.warning(`请填写【${item.label}】字段`)
-                return
-            }
-        }
-
-        filterData = props.filter._buildFunc(filterForm.value)
-    }
-
     if (props.table) {
+        filterData = filterFunc()
         props.table._setQueryParams(filterData)
-        props.table.load()
+        props.table._load()
     }
 }
 
@@ -184,10 +164,10 @@ const onToolBarEvent = (item, e) => {
                 selectObj = dataTable.value.find(a => a[tableAttr.value.dataKey].toLowerCase() === selectValue.toLowerCase())
             }
         }
-        item.command(selectObj, e)
+        item._command(selectObj, e)
     }
     else {
-        item.command(selectedNodes.value, e)
+        item._command(selectedNodes.value, e)
     }
 }
 
@@ -203,15 +183,37 @@ watch(
     { immediate: true }
 )
 
-onMounted(() => {
-    if (props.table) {
-        let filterData = {}
-        if (props.filter) {
-            filterData = props.filter._buildFunc(filterForm.value)
+const filterFunc = () => {
+    let filterData = {}
+    if (props.filter) {
+        for (const item of filterForm.value) {
+            if (!item.required) continue
+
+            const v = item.value
+
+            const isEmpty =
+                v === null ||
+                v === undefined ||
+                v === '' ||
+                (Array.isArray(v) && v.length === 0)
+
+            if (isEmpty) {
+                message.warning(`请填写【${item.label}】字段`)
+                return
+            }
         }
 
+        filterData = props.filter._buildFunc(filterForm.value)
+    }
+
+    return filterData
+}
+
+onMounted(() => {
+    if (props.table) {
+        let filterData = filterFunc()
         props.table._setQueryParams(filterData)
-        props.table.load()
+        props.table._load()
     }
 })
 </script>
@@ -277,7 +279,7 @@ onMounted(() => {
                 element-loading-spinner="el-icon-loading" element-loading-background="rgba(255, 255, 255, 0.7)"
                 style="width: 100%;">
                 <el-table-column v-if="!tableAttr.showNumber" type="selection" />
-                <el-table-column v-for="(item, i) in tableColumns" :prop="item.field" :label="item.title"
+                <el-table-column v-for="(item, i) in tableColumns" :prop="item.field" :label="item.label"
                     :show-overflow-tooltip="true" :width="item.width || 'auto'">
                     <template #default="scope" v-if="item.template && item.template !== undefined">
                         <LayoutPageColumn :template="item.template" :data="scope.row" />
@@ -288,9 +290,9 @@ onMounted(() => {
                     :width="tableBar.width || 'auto'" :align="tableBar.align">
                     <template #default="scope">
                         <template v-for="(action, a) in tableBar.actions" :key="a">
-                            <el-button v-if="store.hasPer(action.perKey) && action.hideFunc(scope.row)"
+                            <el-button v-if="store.hasPer(action.perKey) && action._hideFunc(scope.row)"
                                 :icon="action.icon" :type="action.type ?? 'primary'" size="small" link
-                                @click="(e) => action.command(scope.row, e)">
+                                @click="(e) => action._command(scope.row, e)">
                                 {{ action.label }}
                             </el-button>
                         </template>

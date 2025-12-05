@@ -1,7 +1,10 @@
 import { computed, reactive, ref, inject, provide } from 'vue'
 import { userMessage } from './userMessage'
 
-export function useTable() {
+/**
+ * 注册 provide，用于表单项插槽映射
+ */
+const _registerProvide = () => {
     // 获取已有 map（若无则创建）
     let slotMapRef = inject('columnSlotMap', null)
 
@@ -9,6 +12,10 @@ export function useTable() {
         slotMapRef = ref(new Map())
         provide('columnSlotMap', slotMapRef)
     }
+}
+
+export function useTable() {
+    _registerProvide()
 
     const message = userMessage()
     const _table_columns = ref([])
@@ -48,9 +55,10 @@ export function useTable() {
         enableTree: () => {
             table.tableType = 'treetable'
         },
-        setColumn: (field, title) => {
+        setColumn: (field, label = '') => {
             const column = {
-                field, title,
+                field,
+                label: label || field,
                 width: '',
                 template: undefined,
                 setAttr(attrs = {}) {
@@ -70,9 +78,9 @@ export function useTable() {
         registerLoader: (fn) => {
             _loadEvent.value = fn
         },
-        load: async () => {
+        _load: async () => {
             if (typeof _loadEvent.value !== 'function') {
-                console.warn('未设置 load 函数，请使用 table.setLoader(fn) 进行设置')
+                console.warn('未设置 load 函数，请使用 table.registerLoader(fn) 进行设置')
                 return
             }
 
@@ -104,7 +112,7 @@ export function useTable() {
         },
         reload: async () => {
             if (table.pagination !== null) table.pagination.index = 1
-            await table.load()
+            await table._load()
         }
     })
 

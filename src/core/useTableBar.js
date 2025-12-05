@@ -5,42 +5,52 @@ export function useTableBar(keyMap) {
     const _tablebar_actions = ref([])
     const tablebar = reactive({
         title: '工具栏',
-        width: '',
+        width: 'auto',
         align: 'center',
         position: 'right',// 另外一个 left
         actions: readonly(_tablebar_actions.value),
-        register: (id, label, type = 'primary', icon, command = () => { }) => {
-            const perKey = keyMap.getPer(id)
-            const hideFunc = () => true
-            _tablebar_actions.value.push({ id, perKey, label, icon, type, command, hideFunc })
-            // 抽离共用
-            const action = _tablebar_actions.value.find(a => a.id === id)
-            return {
-                ...action,
-                // 重写 hideFunc
-                hide(fn) {
-                    action.hideFunc = fn
-                    return this
+        register: (label, callback) => {
+            let id = `action_${Date.now()}_${_tablebar_actions.value.length}`
+            let perKey = keyMap.getPer(id)
+            const obj = { id, perKey, label, icon: '', type: 'primary', _command: () => { }, _hideFunc: () => true }
+            _tablebar_actions.value.push(obj)
+
+            const api = {
+                enabledPer(id) {
+                    obj.id = id
+                    obj.perKey = keyMap.getPer(id)
+                    return api
                 },
-                on(fn) {
-                    action.command = fn
-                    return this
-                }
+                setAttr(attrs = {}) {
+                    if ('icon' in attrs) obj.icon = attrs.icon
+                    if ('type' in attrs) obj.type = attrs.type
+                    return api
+                },
+                hide(fn) { obj._hideFunc = fn; return api },
+                on(fn) { obj._command = fn; return api }
             }
+
+            if (typeof callback === 'function') {
+                callback(api)
+                return api
+            }
+
+            return {
+                ...obj,
+                ...api
+            }
+        },
+        setAttr(attrs = {}) {
+            if ('title' in attrs) obj.title = attrs.title
+            if ('width' in attrs) obj.width = attrs.width
+            if ('align' in attrs) obj.align = attrs.align
+            if ('position' in attrs) obj.position = attrs.position
+            return api
         },
         setTitle: (title) => { tablebar.title = title },
         setWidth: (width) => { tablebar.width = width },
         setAlign: (align) => { tablebar.align = align },
         setPosition: (position) => { tablebar.position = position },
-        event(id, fn) {  //待删除
-            id = keyMap.getPer(id)
-            const action = _tablebar_actions.value.find(a => a.id === id)
-            if (action) {
-                action.command = fn
-            } else {
-                console.warn(`未找到 tablebar 动作 id = '${id}'`)
-            }
-        },
         get(id) {
             id = keyMap.getPer(id)
             const action = _tablebar_actions.value.find(a => a.id === id)
@@ -52,8 +62,9 @@ export function useTableBar(keyMap) {
             }
             return {
                 ...action,
+                hide(fn) { action._hideFunc = fn; return this },
                 on(fn) {
-                    action.command = fn
+                    action._command = fn
                     return this
                 }
             }

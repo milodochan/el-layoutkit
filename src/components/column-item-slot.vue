@@ -19,7 +19,7 @@ onMounted(() => {
         markRaw({
             // 这里返回的是函数式组件对象
             setup(props, { attrs }) {
-                console.log(attrs)
+                // console.log(attrs)
                 // console.log(emit)
                 return () => slotRender?.({
                     props: props,   // 外部传入的数据都在 attrs

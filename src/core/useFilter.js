@@ -22,13 +22,14 @@ export function useFilter() {
                 items.map(item => [item.field, item.value])
             )
         },
-        register: (field, label) => {
+        register: (field, label = '') => {
             const item = {
-                field, label,
+                field,
+                label: label || field,
                 fieldType: FilterEnum.TEXT,
                 fieldOperator: '=',
                 value: '',
-                placeholder: '' || `请输入${label}`,
+                placeholder: '' || `请输入${label || field}`,
                 options: [],
                 style: undefined,
                 required: false,

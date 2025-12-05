@@ -142,13 +142,13 @@ app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items 
   const { table, tablebar, filter, toolbar, formMap, dialog, message } = useConfig()
 
   // 注册表单
-  const userForm = formMap.register('userForm')
+  const userForm = formMap.register()
   userForm.setRow()
-    .setColumn('姓名', 'name')
-    .setColumn('年龄', 'age', col => col.setType(FormEnum.INPUT_NUMBER).onRequire())
+    .setColumn('name', col => col.setLabel('年龄'))
+    .setColumn('age', col => col.setLabel('年龄').setType(FormEnum.INPUT_NUMBER).onRequire())
   // 插槽示例
   userForm.setRow().
-    .setColumn('性别', 'gender', col => col.setComponent('name2'))
+    .setColumn('gender', col => col.setLabel('性别').setComponent('name2'))
 
   // 筛选部分
   filter.register('name', '姓名')
@@ -175,18 +175,18 @@ app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items 
               }, 'primary')
 
   // 工具栏
-  toolbar.register('add', '添加').on(async () => {
+  toolbar.register('添加').setAttr({ type: 'success' }).on(async () => {
       userForm.setData({ name: '', age: 0 })
       userDialog.setTitle('添加用户').setForm(userForm).show()
   })
 
   // 工具栏, 测试dialog内容插槽
-  toolbar.register('testslot', '测试dialog内容插槽').on(async () => {
+  toolbar.register('测试dialog内容插槽').on(async () => {
       dialog.register('测试dialog内容插槽').setComponent('name3').show()
   })
 
   // table工具栏
-  tablebar.register('edit', '编辑').on((item) => {
+  tablebar.register('编辑').on((item) => {
       userForm.setData(item)
       userDialog.setTitle('编辑用户').setForm(userForm).show()
   })
@@ -230,8 +230,8 @@ table.registerLoader(async ({ index, size }, queryParams) => {
 })
 ```
 
-#### `setColumn(field: string, title: string)`
-添加表格列，支持链式调用。
+#### `setColumn(field: string, label: string)`
+添加表格列，支持链式调用, label字段选填。
 
 ```js
 table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => row.name)
@@ -311,7 +311,7 @@ table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => r
 ### 方法
 
 #### `register(field: string, label: string)`
-注册筛选字段，返回字段对象，可链式设置属性。
+注册筛选字段，返回字段对象，可链式设置属性, label字段选填。
 
 ```js
 filter.register('name', '姓名')
@@ -329,13 +329,6 @@ filter.register('name', '姓名')
 | `setOperator(operator: FilterOperatorEnum)`  | 设置查询操作符，参考包中FilterOperatorEnum枚举              |
 | `setPlaceholder(text: string)`   | 设置输入提示                 |
 | `onRequire()`   | 开启筛选必须输入验证                 |
-
-#### `event(data: Object)`
-触发筛选事件并重新加载表格。
-
-```js
-filter.event({ name: '张三' })
-```
 
 #### `registerBuildDataFunc(fn: Function)`
 单页面可以重写筛选数据结构，此方法优先级高于全局$layoutkitBuildDataFunc方法。
@@ -358,16 +351,21 @@ filter.registerBuildDataFunc((items) => { return items })
 
 ### 方法
 
-#### `register(id: string, label: string, type: string, icon: string, command: Function)`
-注册动作按钮，返回链式操作对象, 参数type、icon、command不是必须传入的。
+#### `register(label: string)`
+注册动作按钮，返回链式操作对象。
 
 ```js
-toolbar.register('add', '新增', 'Plus', 'success')
+toolbar.register('新增')
+  .setAttr({ type: 'success', icon: 'Plus' })
+  .enabledPer('add')
   .on(() => {
     console.log('点击新增')
   })
 ```
-
+* `enabledPer(id)`
+  启用权限设置权限id
+* `setAttr({})`
+  设置属性，例如： { type: 'info', icon: 'Plus' }
 * `on(fn: Function)`
   注册后提供的点击事件
 
@@ -389,22 +387,33 @@ toolbar.register('add', '新增', 'Plus', 'success')
 
 ### 方法
 
-同 `toolbar`，提供 `register`, `setTitle`, `setWidth`, `setAlign`, `setPosition`。
-
-#### `register(id: string, label: string, type: string, icon: string,  command: Function)`
-注册动作按钮，返回链式操作对象, 参数type、icon、command不是必须传入的。
+#### `register(label: string)`
+注册动作按钮，返回链式操作对象。
 
 ```js
-toolbar.register('add', '新增', 'Plus', 'success')
+toolbar.register('编辑')
+  .setAttr({ type: 'primary', icon: 'Edit' })
+  .enabledPer('edit')
   .hide((item) => item.status === 1)
   .on(() => {
     console.log('点击新增')
   })
 ```
+
+* `enabledPer(id)`
+  启用权限设置权限id
+* `setAttr({})`
+  设置属性，例如： { type: 'info', icon: 'Plus' }
 * `hide(fn: Function)`
   注册后提供回调方法，用于显示和隐藏此动作按钮, fn需返回true or false
 * `on(fn: Function)`
   注册后提供的点击事件
+
+#### `setTitle(title: string), setWidth(width: string), setAlign(align: string), setPosition(position: string)`
+不使用setAttr的情况下可以单独设置这几个属性。
+
+#### `setAttr(attrs: { })` 
+支持设置title、width、align、position。
 
 ---
 
@@ -494,7 +503,7 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
 
   ##### rowApi 方法
 
-  * `setColumn(label, field, callback?)` - 在当前行创建一列。
+  * `setColumn(field, callback, label = '')` - 在当前行创建一列。
 
     * `label`: 表单项标签。
     * `field`: 表单数据字段名。
@@ -506,6 +515,7 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
 
   ##### columnApi 方法
 
+  * `setLabel(label)` - 设置显示标签。
   * `setOptions(options)` - 设置选项列表, 传入的类型需要动态刷新的情况，传入ref对象。
   * `setType(type)` - 设置字段类型 (FormEnum)。
   * `setPlaceholder(text)` - 设置占位符文本。
@@ -529,7 +539,8 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
   * `on(fn)` - 组件事件。
   * `change(fn)` - 组件改变回调，例如：
     ```js
-    form.setRow().setColumn('nickname', 'nickname', col => col
+    form.setRow().setColumn('nickname', col => col
+      .setLabel('昵称')
       .setType(FormEnum.SELECT)
       .setOptions(optionArr)
       .change((item, fieldAttr) => {
@@ -541,8 +552,8 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
   ```js
   const testForm = formMap.register('userForm')
   testForm.setRow()
-      .setColumn('姓名', 'name', col => col.setPlaceholder('请输入姓名').onRequire())
-      .setColumn('性别', 'gender', col => col.setType(FormEnum.SELECT).setOptions([{label:'男', value:'M'}, {label:'女', value:'F'}]))
+      .setColumn('name', col => col.setLabel('姓名').setPlaceholder('请输入姓名').onRequire())
+      .setColumn('gender', col => col.setLabel('性别').setType(FormEnum.SELECT).setOptions([{label:'男', value:'M'}, {label:'女', value:'F'}]))
   ```
 * `setData(formData)` - 设置整个表单的数据。
   ```js
@@ -562,11 +573,8 @@ const userForm = formMap.register('userForm')
 
 // 创建行列
 userForm.setRow()
-    .setColumn('姓名', 'name', col => col.setPlaceholder('请输入姓名').onRequire())
-    .setColumn('性别', 'gender', col => col.setType(FormEnum.SELECT).setOptions([
-        { label: '男', value: 'M' },
-        { label: '女', value: 'F' }
-    ]))
+    .setColumn('name', col => col.setLabel('姓名').setPlaceholder('请输入姓名').onRequire())
+    .setColumn('gender', col => col.setLabel('性别').setType(FormEnum.SELECT).setOptions([{label:'男', value:'M'}, {label:'女', value:'F'}]))
 
 // 设置表单数据
 userForm.setData({ name: 'Alice', gender: 'F' })

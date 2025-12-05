@@ -22,6 +22,7 @@ const props = defineProps({
 const formRef = ref(null)
 // localConfig
 const localConfig = reactive(props.config ?? [])
+console.log(localConfig)
 // 配置和初始数据
 const formData = reactive(props.data ?? {})
 // 动态生成 rules
