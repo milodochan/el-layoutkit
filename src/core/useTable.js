@@ -1,5 +1,5 @@
 import { computed, reactive, ref, inject, provide } from 'vue'
-import { userMessage } from './userMessage'
+import { useMessage } from './useMessage'
 
 /**
  * 注册 provide，用于表单项插槽映射
@@ -17,7 +17,7 @@ const _registerProvide = () => {
 export function useTable() {
     _registerProvide()
 
-    const message = userMessage()
+    const message = useMessage()
     const _table_columns = ref([])
     const _table_data = ref([])
     const _table_query_params = ref({})
@@ -36,7 +36,8 @@ export function useTable() {
             loading: false,
             dataKey: 'id',
             dataParentKey: 'pid',
-            showNumber: false,
+            defaultColumnType: 'selection',
+            enabledDefaultColumn: true,
             expandAll: false,
             //treeProps: "{ hasChildren: 'hasChildren', children: 'children', checkStrictly: false }",
         },
@@ -49,8 +50,11 @@ export function useTable() {
         setParentKey: (dataKey) => {
             table.attr.dataParentKey = dataKey
         },
-        showNumber: () => {
-            table.attr.showNumber = true
+        setDefaultColumnType: (type) => {
+            table.attr.defaultColumnType = type
+        },
+        disabledDefaultCloumn: () => {
+            table.attr.enabledDefaultColumn = false
         },
         enableTree: () => {
             table.tableType = 'treetable'
@@ -58,13 +62,16 @@ export function useTable() {
         setColumn: (field, label = '') => {
             const column = {
                 field,
-                label: label || field,
-                width: '',
+                attrs: {
+                    width: '',
+                    label: label || field,
+                    showOverflowTooltip: true
+                },
                 template: undefined,
                 setAttr(attrs = {}) {
                     if (typeof attrs !== 'object') return this
-                    if ('width' in attrs) this.width = attrs.width
-                    return this // 支持链式调用, 暂时宽度，需要其他在加
+                    Object.assign(column.attrs, attrs)
+                    return this
                 },
                 setTemplate(template) {
                     this.template = template

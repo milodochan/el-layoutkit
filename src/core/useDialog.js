@@ -1,14 +1,10 @@
-import { reactive, readonly, markRaw, ref, inject, provide, toRaw } from 'vue'
+import { reactive, markRaw, ref, inject, provide, toRaw } from 'vue'
 
 export function useDialog() {
     const _dialogs = ref([])
     const dialog = reactive({
         instance: null,
-        dialogs: readonly(_dialogs.value),
-        /**
-         * 注册 dialogSlotMap
-         * registerProvide('key', comp)
-         */
+        //dialogs: readonly(_dialogs.value),
         registerProvide(id, comp) {
             if (typeof id !== 'string') {
                 console.warn(`[dialog] registerProvide: key 必须为 string，收到:`, id)
@@ -17,34 +13,32 @@ export function useDialog() {
 
             // 获取已有 map（若无则创建）
             let slotMapRef = inject('dialogSlotMap', null)
-
             if (!slotMapRef) {
                 slotMapRef = ref(new Map())
                 provide('dialogSlotMap', slotMapRef)
             }
 
-            // 永远 markRaw，避免组件被 reactive 包装
             slotMapRef.value.set(id, markRaw(comp))
-
             return this
         },
         register(title) {
             const id = `${Date.now()}-${Math.random()}`
-
-            // 通过 reactive 创建真正的实例
-            const obj = reactive({
+            const data = reactive({
                 id,
-                title,
-                width: '50%',
-                loading: false,
-                fullscreen: false,
-                draggable: false,
                 visible: false,
+                loading: false,
+                attrs: {
+                    title: title || '',
+                    alignCenter: false,
+                    fullscreen: false,
+                    draggable: false,
+                    width: '50%',
+                    center: false
+                },
                 component: null,
-                withCancel: true,
                 propsData: {},
-                _actions: [], // 内部存储真实动作对象
-                // --- 动作 getter 自动添加取消按钮 ---
+                withCancel: true,
+                _actions: [],
                 get actions() {
                     if (!this.withCancel) return this._actions
                     return [
@@ -57,99 +51,95 @@ export function useDialog() {
                             command: () => { this.visible = false }
                         }
                     ]
-                },
-                // --- 链式 API ---
-                setTitle(t) {
-                    obj.title = t
-                    return obj
-                },
-                setAttr(attrs = {}) {
-                    if (typeof attrs !== 'object') return this
-
-                    if ('title' in attrs) this.title = attrs.title
-                    if ('width' in attrs) this.width = attrs.width
-                    if ('fullscreen' in attrs) this.fullscreen = attrs.fullscreen
-                    if ('draggable' in attrs) this.draggable = attrs.draggable
-                    if ('withCancel' in attrs) this.withCancel = attrs.withCancel
-                    if ('center' in attrs) this.center = attrs.center
-
-                    return this // 支持链式调用
-                },
-                setBtn(label = '', command = () => { }, type = 'info', icon = '') {
-                    const index = this._actions.findIndex(a => a.label === label)
-                    if (index !== -1) {
-                        this._actions[index] = { label, icon, type, loading: false, command }
-                    } else {
-                        this._actions.push({ label, icon, type, loading: false, command })
-                    }
-                    return this
-                },
-                setComponent(comp, propsData) {
-                    if (comp) {
-                        obj.component = markRaw(comp)
-                    }
-
-                    // 没有 propsData，直接结束
-                    if (!propsData) return obj
-
-                    // ---- 加载 propsData ----
-                    const loadProps = async () => {
-                        obj.loading = true
-                        try {
-                            let resolved
-                            if (typeof propsData === 'function') {
-                                resolved = propsData()
-                                if (resolved instanceof Promise) {
-                                    resolved = await resolved
-                                }
-                            } else if (typeof propsData === 'object') {
-                                resolved = propsData
-                            }
-                            // 浅拷贝为普通对象，避免 Proxy
-                            obj.propsData = resolved && typeof resolved === 'object'
-                                ? { ...toRaw(resolved) }
-                                : {}
-                        } catch (e) {
-                            console.error('propsData 加载失败:', e)
-                            obj.propsData = {}
-                        } finally {
-                            obj.loading = false
-                        }
-                    }
-
-                    // 异步加载（不阻塞链式调用）
-                    loadProps()
-
-                    return obj
-                },
-                setForm(propsData) { return obj.setComponent('form', propsData) },
-                show() {
-                    obj.visible = true
-                    dialog.instance = obj
-                },
-                hide() {
-                    obj.visible = false
-                },
-                destroy() {
-                    if (!dialog.instance) return
-
-                    // 关闭时重置数据
-                    const instance = dialog.instance
-                    if (instance.data) {
-                        // 这里统一重置表单数据
-                        if (typeof instance.data === 'object') {
-                            Object.keys(instance.data).forEach(k => instance.data[k] = undefined)
-                        }
-                    }
-
-                    // 关闭弹窗
-                    instance.visible = false
-                    instance.loading = false
                 }
             })
 
-            _dialogs.value.push(obj)
-            return obj
+            const get = () => data
+            const disabledCancel = () => {
+                data.withCancel = false
+                return method
+            }
+            const setTitle = (title) => {
+                data.attrs.title = title
+                return method
+            }
+            const setAttr = (attrs = {}) => {
+                if (typeof attrs !== 'object') return this
+                Object.assign(data.attrs, attrs)
+                return method
+            }
+            const setBtn = (label = '', command = () => { }, type = 'info', icon = '') => {
+                const index = data._actions.findIndex(a => a.label === label)
+                if (index > -1) {
+                    data._actions[index] = { label, icon, type, loading: false, command }
+                } else {
+                    data._actions.push({ label, icon, type, loading: false, command })
+                }
+                return method
+            }
+            const setComponent = (comp, propsData) => {
+                if (comp) {
+                    data.component = markRaw(comp)
+                }
+
+                // 没有 propsData，直接结束
+                if (!propsData) return method
+
+                const resolvePropsData = async () => {
+                    data.loading = true
+                    try {
+                        const result = typeof propsData === "function"
+                            ? await propsData()
+                            : propsData
+
+                        data.propsData = result && typeof result === "object"
+                            ? { ...toRaw(result) }
+                            : {}
+                        console.log(data.propsData)
+                    } catch (err) {
+                        console.error("propsData 加载失败:", err)
+                        data.propsData = {}
+                    } finally {
+                        data.loading = false
+                    }
+                }
+
+                // 异步加载，不阻塞链式调用
+                resolvePropsData()
+                return method
+            }
+            const setForm = (propsData) => setComponent('form', propsData)
+            const show = () => {
+                data.visible = true
+                dialog.instance = {
+                    get, destroy, hide
+                }
+            }
+            const hide = () => data.visible = false
+            const destroy = () => {
+                if (!dialog.instance) return
+                // 关闭时重置数据
+                if (data.propsData) {
+                    Object.keys(data.propsData).forEach(k => data.propsData[k] = undefined)
+                }
+                // 关闭弹窗
+                data.visible = false
+                data.loading = false
+            }
+
+            const method = {
+                show,
+                hide,
+                destroy,
+                setTitle,
+                setAttr,
+                setBtn,
+                setComponent,
+                setForm,
+                disabledCancel
+            }
+            _dialogs.value.push(data)
+            return method
         }
     })
 

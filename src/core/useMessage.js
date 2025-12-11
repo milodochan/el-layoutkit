@@ -1,6 +1,6 @@
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 
-export function userMessage() {
+export function useMessage() {
     const message = {
         // ---------- 消息 ----------
         success: (content, placement = 'top', duration = 2000) => ElMessage({ message: content, type: 'success', duration, placement }),

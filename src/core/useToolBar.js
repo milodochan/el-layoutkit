@@ -6,14 +6,14 @@ export function useToolBar(keyMap) {
         actions: readonly(_toolbar_actions.value),
         register: (label, callback) => {
             let id = `action_${Date.now()}_${_toolbar_actions.value.length}`
-            let perKey = keyMap.getPer(id)
+            let perKey = keyMap.get(id)
             const obj = { id, perKey, label, icon: '', type: 'primary', _command: () => { } }
             _toolbar_actions.value.push(obj)
 
             const api = {
                 enabledPer(id) {
                     obj.id = id
-                    obj.perKey = keyMap.getPer(id)
+                    obj.perKey = keyMap.get(id)
                     return api
                 },
                 setAttr(attrs = {}) {

@@ -29,7 +29,8 @@ export function useFilter() {
                 fieldType: FilterEnum.TEXT,
                 fieldOperator: '=',
                 value: '',
-                placeholder: '' || `请输入${label || field}`,
+                defaultValue: '',
+                placeholder: `请输入${label || field}`,
                 options: [],
                 style: undefined,
                 required: false,
@@ -48,6 +49,11 @@ export function useFilter() {
                 },
                 setValue(val) {
                     this.value = val
+                    return this
+                },
+                setDefaultValue(val) {
+                    this.value = val
+                    this.defaultValue = val
                     return this
                 },
                 setOperator(operator) {

@@ -4,9 +4,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { FilterEnum } from '../enum/FilterEnum'
 import LayoutPageColumn from './layout-page-column.vue'
 import LayoutPageDialog from './layout-page-dialog.vue'
-import { userMessage } from '../core/userMessage'
+import { useMessage } from '../core/useMessage'
 
-const message = userMessage()
+const message = useMessage()
 const selectedNodes = ref()
 const props = defineProps({
     /**
@@ -51,7 +51,11 @@ const props = defineProps({
 
 const filterForm = ref([])
 const tableFilter = computed(() => props.filter ?? { data: [] })
-const tableColumns = computed(() => props.table?.columns ?? [])
+const tableColumns = computed(() => {
+    const cols = props.table?.columns ?? []
+    console.log(cols)
+    return cols
+})
 const dataTable = computed(() => {
     if (props.table?.tableType === 'treetable') {
         return buildTreeTableData(props.table.data)
@@ -74,7 +78,8 @@ const tableAttr = computed(() => {
         loading: false,
         dataKey: 'id',
         dataParentKey: 'pid',
-        showNumber: false,
+        defaultColumnType: 'selection',
+        enabledDefaultColumn: true,
         expandAll: false
     }
 })
@@ -110,7 +115,7 @@ const onFilterChange = (filterType) => {
     if (!filterType) {
         // 清除数据
         filterForm.value.forEach((item, index) => {
-            item.value = ''
+            item.value = item.defaultValue ?? ''
         })
     }
 
@@ -205,7 +210,7 @@ const filterFunc = () => {
 
         filterData = props.filter._buildFunc(filterForm.value)
     }
-
+    console.log(filterData)
     return filterData
 }
 
@@ -278,9 +283,9 @@ onMounted(() => {
                 :default-expand-all="tableAttr.expandAll" stripe border element-loading-text="加载中..."
                 element-loading-spinner="el-icon-loading" element-loading-background="rgba(255, 255, 255, 0.7)"
                 style="width: 100%;">
-                <el-table-column v-if="!tableAttr.showNumber" type="selection" />
-                <el-table-column v-for="(item, i) in tableColumns" :prop="item.field" :label="item.label"
-                    :show-overflow-tooltip="true" :width="item.width || 'auto'">
+                <el-table-column v-if="tableAttr.enabledDefaultColumn" :type="tableAttr.defaultColumnType" />
+                <el-table-column v-for="(item, i) in tableColumns" :prop="item.field" :show-overflow-tooltip="true"
+                    v-bind="item.attrs">
                     <template #default="scope" v-if="item.template && item.template !== undefined">
                         <LayoutPageColumn :template="item.template" :data="scope.row" />
                     </template>
@@ -300,7 +305,7 @@ onMounted(() => {
                 </el-table-column>
             </el-table>
             <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
-                <el-pagination background layout="sizes, prev, pager, next" v-model:current-page="pageInfo.index"
+                <el-pagination background layout="total, sizes, prev, pager, next" v-model:current-page="pageInfo.index"
                     :total="pageInfo.total" :page-size="pageInfo.size" :page-sizes="pageInfo.options"
                     @change="onPageChange" @size-change="onPageSizeChange" />
             </div>

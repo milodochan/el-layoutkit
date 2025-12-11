@@ -1,6 +1,6 @@
 {
     "name": "@layoutkit/el-layoutkit",
-    "version": "0.1.17",
+    "version": "0.1.19",
     "main": "dist/el-layoutkit.cjs.js",
     "module": "dist/el-layoutkit.es.js",
     "type": "module",
@@ -29,7 +29,6 @@
         "vite": "^5.0.0"
     },
     "dependencies": {
-        "@layoutkit/el-layoutkit": "^0.1.4",
         "crypto-js": "^4.2.0"
     }
 }

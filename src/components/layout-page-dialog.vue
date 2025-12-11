@@ -1,11 +1,11 @@
 <script setup>
 import { computed, inject, ref, watch, toRaw } from 'vue'
+import { useDialogAttrs } from '../core/useAttrs'
 
+const componentRef = ref(null)
+const dialogKey = ref(`${Date.now()}-${Math.random()}`)
+const dialogAttrs = useDialogAttrs()
 const props = defineProps({
-    // component: {
-    //     type: [Object, String, Function],
-    //     default: null
-    // }, // 传入组件对象或 defineAsyncComponent
     propsData: Object,
     dialog: {
         type: Object,
@@ -13,14 +13,25 @@ const props = defineProps({
     }
 })
 
-const componentRef = ref(null)
-const dialogKey = ref(`${Date.now()}-${Math.random()}`)
 const instance = computed(() => props.dialog.instance)
+const data = computed(() => instance.value?.get())
+
 const visible = computed({
-    get: () => instance.value?.visible ?? false,
+    get: () => data.value?.visible ?? false,
     set: (val) => emits('update:visible', val)
 })
 
+const attrs = computed(() => {
+    const base = { ...dialogAttrs }         // reactive copy
+    const ext = data.value?.attrs || {} // 外部传入的 attrs
+
+    for (const key in ext) {
+        if (key in base) {
+            base[key] = ext[key]               // 只覆盖存在的属性
+        }
+    }
+    return base
+})
 
 const emits = defineEmits(['update:visible'])
 
@@ -29,7 +40,7 @@ const dialogSlotMap = inject('dialogSlotMap', ref(new Map()))
 
 // 当前内容组件
 const currentComponent = computed(() => {
-    const comp = instance.value?.component
+    const comp = data.value?.component
     if (!comp) return null
 
     // 真实组件对象 或者 defineAsyncComponent
@@ -44,9 +55,10 @@ const currentComponent = computed(() => {
 })
 
 const safePropsData = computed(() => {
-    if (!instance.value?.propsData) return {}
+    dialogKey.value = `${Date.now()}-${Math.random()}`
+    if (!data.value?.propsData) return {}
     // 剥离 reactive 和 proxy，转换为普通对象
-    const raw = toRaw(instance.value.propsData)
+    const raw = toRaw(data.value.propsData)
     const { key, ...rest } = raw // 如果有 key 强制剔除
     return rest
 })
@@ -83,11 +95,9 @@ watch(() => visible, (val) => {
 
 <template>
     <div>
-        <el-dialog v-model="visible" :title="instance?.title ?? ''" :align-center="instance?.center ?? false"
-            :width="instance?.width ?? '50%'" :fullscreen="instance?.fullscreen ?? false" destroy-on-close
-            :draggable="instance?.draggable ?? false" @close="destroy()" custom-class="full-height-dialog">
+        <el-dialog v-model="visible" @close="destroy()" v-bind="attrs">
             <!-- 内容区域：元素 Plus 官方 loading -->
-            <div v-loading="instance?.loading" element-loading-text="加载中..."
+            <div v-loading="data?.loading" element-loading-text="加载中..."
                 element-loading-background="rgba(255, 255, 255, 0.7)" style="min-height: 150px;">
                 <component :key="dialogKey" ref="componentRef" v-if="currentComponent" :is="currentComponent"
                     v-bind="safePropsData" />
@@ -99,7 +109,7 @@ watch(() => visible, (val) => {
             <template #footer>
                 <div class="dialog-footer">
                     <!--item.key  为取消按钮时  返回true-->
-                    <template v-for="(item, i) in instance?.actions ?? []" :key="i">
+                    <template v-for="(item, i) in data?.actions ?? []" :key="i">
                         <el-button :type="item.type" :icon="item.icon" :loading="item.loading"
                             @click="actionCommands(item)">
                             {{ item.label }}

@@ -2,28 +2,28 @@ import { reactive, readonly, ref, watch } from 'vue'
 import LayoutForm from '../components/layout-form.vue'
 import { useDialog } from './useDialog'
 import { useForm } from './useForm'
-import { userMessage } from './userMessage'
+import { useMessage } from './useMessage'
 import { useTable } from './useTable'
 import { useFilter } from './useFilter'
 import { useToolBar } from './useToolBar'
 import { useTableBar } from './useTableBar'
-import { useKeyMap } from './useKeyMap'
+import { useKey } from './useKey'
 
 export function useConfig() {
     // keyMap
-    const keyMap = useKeyMap()
+    const key = useKey()
     // 工具栏
-    const toolbar = useToolBar(keyMap)
+    const toolbar = useToolBar(key)
     // 列表工具栏
-    const tablebar = useTableBar(keyMap)
+    const tablebar = useTableBar(key)
     // 表格筛选
     const filter = useFilter()
     // 表格属性设置
     const table = useTable()
     // 表单
-    const formMap = useForm()
+    const form = useForm()
     // 消息和确认框
-    const message = userMessage()
+    const message = useMessage()
     // dialog
     const dialog = useDialog()
     dialog.registerProvide('form', LayoutForm)
@@ -46,5 +46,5 @@ export function useConfig() {
         }
     })
 
-    return { table, toolbar, tablebar, filter, dialog, formMap, keyMap, message, propsData }
+    return { table, toolbar, tablebar, filter, dialog, form, key, message, propsData }
 }

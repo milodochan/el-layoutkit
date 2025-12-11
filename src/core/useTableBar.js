@@ -11,14 +11,14 @@ export function useTableBar(keyMap) {
         actions: readonly(_tablebar_actions.value),
         register: (label, callback) => {
             let id = `action_${Date.now()}_${_tablebar_actions.value.length}`
-            let perKey = keyMap.getPer(id)
+            let perKey = keyMap.get(id)
             const obj = { id, perKey, label, icon: '', type: 'primary', _command: () => { }, _hideFunc: () => true }
             _tablebar_actions.value.push(obj)
 
             const api = {
                 enabledPer(id) {
                     obj.id = id
-                    obj.perKey = keyMap.getPer(id)
+                    obj.perKey = keyMap.get(id)
                     return api
                 },
                 setAttr(attrs = {}) {
@@ -52,7 +52,7 @@ export function useTableBar(keyMap) {
         setAlign: (align) => { tablebar.align = align },
         setPosition: (position) => { tablebar.position = position },
         get(id) {
-            id = keyMap.getPer(id)
+            id = keyMap.get(id)
             const action = _tablebar_actions.value.find(a => a.id === id)
             if (!action) {
                 console.warn(`未找到 tablebar 动作 id = '${id}'`)

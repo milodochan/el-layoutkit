@@ -139,10 +139,10 @@ app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items 
     LayoutPage, useConfig, FormEnum,
     DialogContentSlot, FormItemSlot, ColumnItemSlot
   } from '@layoutkit/el-layoutkit'
-  const { table, tablebar, filter, toolbar, formMap, dialog, message } = useConfig()
+  const { table, tablebar, filter, toolbar, form, dialog, message } = useConfig()
 
   // 注册表单
-  const userForm = formMap.register()
+  const userForm = form.register()
   userForm.setRow()
     .setColumn('name', col => col.setLabel('年龄'))
     .setColumn('age', col => col.setLabel('年龄').setType(FormEnum.INPUT_NUMBER).onRequire())
@@ -237,7 +237,7 @@ table.registerLoader(async ({ index, size }, queryParams) => {
 table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => row.name)
 ```
 * `setAttr(attrs: object)`
-  设置列的属性，暂时只支持width字段
+  设置列的属性，属性字段参考elementplus column api 属性
 * `setTemplate(template: Function)`
   重写列的内容，支持返回一般内容以及使用组件返回
   ```js
@@ -284,8 +284,11 @@ table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => r
 #### `enableTree()`
 启用树结构表格。
 
-#### `showNumber()`
-开启序号显示（暂时未实现）。
+#### `disabledDefaultCloumn()`
+禁用默认列。
+
+#### `setDefaultColumnType(type)`
+设置默认列类型，值：'default' | 'selection' | 'index' | 'expand'
 
 #### `setRowKey(dataKey: string)`
 数据行的字段。
@@ -323,9 +326,10 @@ filter.register('name', '姓名')
 
 | 方法                               | 说明                     |
 | -------------------------------- | ---------------------- |
-| `setOptions(options: Array)`     | 设置下拉选项，自动切换为 SELECT 类型 |
-| `setFieldType(type: FilterEnum)` | 设置字段类型，参考包中FilterEnum枚举                 |
-| `setValue(val: any)`             | 设置默认值                  |
+| `setOptions(options: Array)`     | 设置下拉选项，自动切换为 SELECT 类型       |
+| `setFieldType(type: FilterEnum)` | 设置字段类型，参考包中FilterEnum枚举       |
+| `setDefaultValue(val: any)`      | 设置默认值, 同时设置值, 重置时生效         |
+| `setValue(val: any)`             | 设置值                  |
 | `setOperator(operator: FilterOperatorEnum)`  | 设置查询操作符，参考包中FilterOperatorEnum枚举              |
 | `setPlaceholder(text: string)`   | 设置输入提示                 |
 | `onRequire()`   | 开启筛选必须输入验证                 |
@@ -427,15 +431,10 @@ toolbar.register('编辑')
 
 | 属性 | 类型 | 说明 |
 |------|------|------|
-| `key` | string | 弹窗唯一 key |
 | `title` | string | 弹窗标题 |
 | `width` | string | 弹窗宽度（默认 `'50%'`） |
-| `loading` | boolean | 弹窗内容加载状态 |
 | `fullscreen` | boolean | 是否全屏 |
 | `draggable` | boolean | 是否可拖拽 |
-| `visible` | boolean | 弹窗显示状态 |
-| `component` | Component | 弹窗内容组件 |
-| `propsData` | object | 组件 props |
 | `withCancel` | boolean | 是否自动添加取消按钮 |
 | `_actions` | Array | 内部动作按钮存储 |
 | `actions` | Array | 动作按钮，自动生成取消按钮（如需） |
@@ -445,7 +444,7 @@ toolbar.register('编辑')
 | 方法 | 参数 | 返回值 | 说明 |
 |------|------|--------|------|
 | `setTitle(title)` | string | 当前对象 | 设置标题 |
-| `setAttr(attrs)` | object | 当前对象 | 批量设置属性，如 title、width、fullscreen、draggable、withCancel、center |
+| `setAttr(attrs)` | object | 当前对象 | 批量设置属性，如 title、width、fullscreen、draggable、withCancel、aliginCenter |
 | `setBtn(label, command, type, icon)` | string, Function, string, string | 当前对象 | 添加或覆盖按钮 |
 | `setComponent(comp, propsData)` | Component/Object/Function | 当前对象 | 设置弹窗组件及 propsData，支持异步 |
 | `setForm(propsData)` | Object/Function | 当前对象 | 快速设置表单组件 |

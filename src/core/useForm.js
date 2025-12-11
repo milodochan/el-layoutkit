@@ -48,7 +48,11 @@ const useRowApi = (newRow) => {
         setType(type) { column.fieldType = type; return columnApi },
         setPlaceholder(text) { column.fieldAttr.placeholder = text; return columnApi },
         onRequire() { column.fieldAttr.require = true; return columnApi },
-        setAttr(attrs = {}) { Object.assign(column.fieldAttr, attrs); return columnApi },
+        setAttr(attrs = {}) {
+          if (typeof attrs !== 'object') return columnApi
+          Object.assign(column.fieldAttr, attrs)
+          return columnApi
+        },
         setComponent(comp) {
           if (comp) {
             column.component = markRaw(comp)

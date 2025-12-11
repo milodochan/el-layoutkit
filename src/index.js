@@ -9,7 +9,7 @@ export { default as ColumnItemSlot } from './components/column-item-slot.vue'
 export { useDialog } from './core/useDialog'
 export { useForm } from './core/useForm'
 export { useConfig } from './core/useConfig'
-export { userMessage } from './core/userMessage'
+export { useMessage } from './core/useMessage'
 export { default as store } from './core/store'
 
 // enum
