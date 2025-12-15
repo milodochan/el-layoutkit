@@ -1,5 +1,5 @@
 import { FormEnum } from '../enum/FormEnum'
-import { reactive, readonly, markRaw, ref, inject, provide } from 'vue'
+import { readonly, markRaw, ref, inject, provide } from 'vue'
 
 /**
  * 注册 provide，用于表单项插槽映射
@@ -93,7 +93,7 @@ export function useForm() {
   _registerProvide()
 
   const _forms = ref([])
-  const form = reactive({
+  const form = {
     list: readonly(_forms.value),
     get: (id) => _forms.value.find(f => f.id === id),
     register(id = '') {
@@ -103,7 +103,7 @@ export function useForm() {
         console.warn(`Form with id "${id}" already exists. Returning the existing form.`)
       }
 
-      const obj = reactive({
+      const obj = {
         id,
         data: {},
         config: [],
@@ -113,15 +113,15 @@ export function useForm() {
           return useRowApi(newRow)
         },
         setData(formData) {
-          this.data = formData
+          obj.data = formData
           return this
         }
-      })
+      }
 
       _forms.value.push(obj)
       return obj
     }
-  })
+  }
 
   return form
 }

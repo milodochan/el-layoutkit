@@ -37,6 +37,7 @@ export function useDialog() {
                 },
                 component: null,
                 propsData: {},
+                formData: null,
                 withCancel: true,
                 _actions: [],
                 get actions() {
@@ -82,34 +83,18 @@ export function useDialog() {
                     data.component = markRaw(comp)
                 }
 
-                // 没有 propsData，直接结束
                 if (!propsData) return method
-
-                const resolvePropsData = async () => {
-                    data.loading = true
-                    try {
-                        const result = typeof propsData === "function"
-                            ? await propsData()
-                            : propsData
-
-                        data.propsData = result && typeof result === "object"
-                            ? { ...toRaw(result) }
-                            : {}
-                    } catch (err) {
-                        console.error("propsData 加载失败:", err)
-                        data.propsData = {}
-                    } finally {
-                        data.loading = false
-                    }
-                }
-
-                // 异步加载，不阻塞链式调用
-                resolvePropsData()
+                data.propsData = propsData
                 return method
             }
             const setForm = (propsData) => setComponent('form', propsData)
+            const setFormData = (propsData) => {
+                data.formData = structuredClone(toRaw(propsData))
+                return method
+            }
             const show = () => {
                 data.visible = true
+                data.loading = true
                 dialog.instance = {
                     get, destroy, hide
                 }
@@ -119,7 +104,11 @@ export function useDialog() {
                 if (!dialog.instance) return
                 // 关闭时重置数据
                 if (data.propsData) {
-                    Object.keys(data.propsData).forEach(k => data.propsData[k] = undefined)
+                    if (data.component === 'form') {
+                        data.formData = null
+                        data.propsData.data = null
+                    }
+                    else Object.keys(data.propsData).forEach(k => data.propsData[k] = undefined)
                 }
                 // 关闭弹窗
                 data.visible = false
@@ -135,6 +124,7 @@ export function useDialog() {
                 setBtn,
                 setComponent,
                 setForm,
+                setFormData,
                 disabledCancel
             }
             _dialogs.value.push(data)

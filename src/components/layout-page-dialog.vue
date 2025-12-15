@@ -1,10 +1,12 @@
 <script setup>
-import { computed, inject, ref, watch, toRaw } from 'vue'
+import { computed, inject, ref, toRaw } from 'vue'
 import { useDialogAttrs } from '../core/useAttrs'
 
+const propsData = ref({})
 const componentRef = ref(null)
-const dialogKey = ref(`${Date.now()}-${Math.random()}`)
 const dialogAttrs = useDialogAttrs()
+const dialogKey = ref(`${Date.now()}-${Math.random()}`)
+
 const props = defineProps({
     propsData: Object,
     dialog: {
@@ -22,14 +24,13 @@ const visible = computed({
 })
 
 const attrs = computed(() => {
-    const base = { ...dialogAttrs }         // reactive copy
-    const ext = data.value?.attrs || {} // 外部传入的 attrs
+    const base = { ...dialogAttrs }
+    const ext = data.value?.attrs || {}
 
-    for (const key in ext) {
-        if (key in base) {
-            base[key] = ext[key]               // 只覆盖存在的属性
-        }
-    }
+    Object.keys(base).forEach(k => {
+        if (k in ext) base[k] = ext[k]
+    })
+
     return base
 })
 
@@ -43,27 +44,20 @@ const currentComponent = computed(() => {
     const comp = data.value?.component
     if (!comp) return null
 
+    if (typeof comp === 'string') {
+        return dialogSlotMap.value.get(comp) || null
+    }
+
     // 真实组件对象 或者 defineAsyncComponent
     if (typeof comp === 'object' || typeof comp === 'function') {
         return comp
     }
 
-    // 是字符串 key，尝试从 slotMap 查找组件
-    if (typeof comp === 'string' && dialogSlotMap.value.has(comp)) {
-        return dialogSlotMap.value.get(comp)
-    }
-})
-
-const safePropsData = computed(() => {
-    dialogKey.value = `${Date.now()}-${Math.random()}`
-    if (!data.value?.propsData) return {}
-    // 剥离 reactive 和 proxy，转换为普通对象
-    const raw = toRaw(data.value.propsData)
-    const { key, ...rest } = raw // 如果有 key 强制剔除
-    return rest
+    return null
 })
 
 const destroy = () => {
+    propsData.value = {}
     instance.value?.destroy()
 }
 
@@ -85,22 +79,42 @@ const actionCommands = async (item) => {
     }
 }
 
-// 监听 visible，当弹窗关闭时清空按钮
-watch(() => visible, (val) => {
-    if (!val) {
-        actions.value = []
+const loadData = async () => {
+    try {
+        const result = typeof data.value.propsData === "function"
+            ? await data.value.propsData()
+            : data.value.propsData
+
+        propsData.value = result && typeof result === "object"
+            ? { ...toRaw(result) }
+            : {}
+
+        if (data.value?.component === 'form' && data.value?.formData) {
+            propsData.value = {
+                ...data.value.propsData,
+                data: toRaw(data.value.formData)
+            }
+        }
+
+    } catch (err) {
+        console.error("propsData 加载失败:", err)
+        propsData.value = {}
+    } finally {
+        data.value.loading = false
+        dialogKey.value = `${Date.now()}-${Math.random()}`
     }
-})
+}
+
 </script>
 
 <template>
     <div>
-        <el-dialog v-model="visible" @close="destroy()" v-bind="attrs">
+        <el-dialog v-model="visible" @closed="destroy()" @opened="loadData" v-bind="attrs">
             <!-- 内容区域：元素 Plus 官方 loading -->
-            <div v-loading="data?.loading" element-loading-text="加载中..."
+            <div v-loading="data.loading" element-loading-text="加载中..."
                 element-loading-background="rgba(255, 255, 255, 0.7)" style="min-height: 150px;">
                 <component :key="dialogKey" ref="componentRef" v-if="currentComponent" :is="currentComponent"
-                    v-bind="safePropsData" />
+                    v-bind="propsData" />
 
                 <div v-else class="text-gray-400 text-sm text-center p-4">
                     ⚠️ 无内容可展示，请检查 component 是否传入正确。

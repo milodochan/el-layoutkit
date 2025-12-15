@@ -91,7 +91,7 @@ export function useTable() {
                 return
             }
 
-            table.loading = true
+            table.attr.loading = true
             const { index = 1, size = 10 } = table.pagination ?? {}
             try {
                 const res = await _loadEvent.value({ index, size }, _table_query_params.value)
@@ -114,7 +114,7 @@ export function useTable() {
                 message.error('表格加载数据失败，请稍后重试')
                 console.error('表格加载数据失败:', e)
             } finally {
-                table.loading = false
+                table.attr.loading = false
             }
         },
         reload: async () => {

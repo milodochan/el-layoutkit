@@ -72,12 +72,13 @@ defineExpose({
     }),
     reset: () => formRef.value?.resetFields()
 })
+
 </script>
 
 <template>
     <el-form :model="formData" :rules="rules" ref="formRef" label-width="auto">
         <template v-for="(row, r) in localConfig" :key="r">
-            <el-row>
+            <el-row :gutter="20">
                 <el-col v-for="(item, c) in row" :key="item.field" :span="getAutoSpan(row, c)"
                     v-show="item.hideFunc(formData)">
                     <LayoutFormItem :item="item" :data="formData" />
