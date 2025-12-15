@@ -24,19 +24,27 @@ const formRef = ref(null)
 const localConfig = reactive(props.config ?? [])
 // 配置和初始数据
 const formData = reactive(props.data ?? {})
-console.log(formData)
 // 动态生成 rules
 const rules = computed(() => {
     const r = {}
     props.config.flat().forEach((item) => {
         // 根据 hideFunc 判断字段是否显示，隐藏则不必填
         const visible = item.hideFunc ? item.hideFunc(formData) : true
+        // 每个字段的验证规则数组
+        const fieldRules = []
         if (item.fieldAttr.require && visible) {
-            r[item.field] = [{
+            fieldRules.push({
                 required: true,
                 message: `${item.fieldAttr.label}为必填项`,
                 trigger: 'blur'
-            }]
+            })
+
+            // ② 合并 item.rules（外部传入的自定义规则）
+            if (Array.isArray(item.rules)) {
+                fieldRules.push(...item.rules)
+            }
+
+            r[item.field] = fieldRules
         }
     })
     return r

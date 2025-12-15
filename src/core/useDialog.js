@@ -95,7 +95,6 @@ export function useDialog() {
                         data.propsData = result && typeof result === "object"
                             ? { ...toRaw(result) }
                             : {}
-                        console.log(data.propsData)
                     } catch (err) {
                         console.error("propsData 加载失败:", err)
                         data.propsData = {}

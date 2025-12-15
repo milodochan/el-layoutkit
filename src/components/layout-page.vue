@@ -51,11 +51,7 @@ const props = defineProps({
 
 const filterForm = ref([])
 const tableFilter = computed(() => props.filter ?? { data: [] })
-const tableColumns = computed(() => {
-    const cols = props.table?.columns ?? []
-    console.log(cols)
-    return cols
-})
+const tableColumns = computed(() => props.table?.columns ?? [])
 const dataTable = computed(() => {
     if (props.table?.tableType === 'treetable') {
         return buildTreeTableData(props.table.data)
@@ -210,7 +206,6 @@ const filterFunc = () => {
 
         filterData = props.filter._buildFunc(filterForm.value)
     }
-    console.log(filterData)
     return filterData
 }
 
@@ -235,31 +230,32 @@ onMounted(() => {
                         <el-form-item :label="item.label">
                             <!-- 文本输入 -->
                             <el-input v-if="item.fieldType === FilterEnum.TEXT" v-model="item.value"
-                                :placeholder="item.placeholder" :style="item.style" />
+                                :placeholder="item.placeholder" v-bind="item.fieldAttr" />
 
                             <!-- 数字输入 -->
                             <el-input-number v-else-if="item.fieldType === FilterEnum.NUMBER" v-model="item.value"
-                                :placeholder="item.placeholder" :style="item.style" />
-
+                                :placeholder="item.placeholder" v-bind="item.fieldAttr" />
                             <!-- 下拉框 -->
                             <el-select v-else-if="item.fieldType === FilterEnum.SELECT" v-model="item.value"
-                                :placeholder="item.placeholder" :style="item.style">
+                                :placeholder="item.placeholder" v-bind="item.fieldAttr">
                                 <el-option v-for="option in item.options" :key="option.value" :label="option.label"
                                     :value="option.value" />
                             </el-select>
 
                             <!-- 日期 -->
                             <el-date-picker v-else-if="item.fieldType === FilterEnum.DATE" v-model="item.value"
-                                type="date" placeholder="请选择日期" :style="item.style" format="YYYY-MM-DD"
-                                value-format="YYYY-MM-DD" />
+                                type="date" placeholder="请选择日期" format="YYYY-MM-DD" value-format="YYYY-MM-DD"
+                                v-bind="item.fieldAttr" />
 
                             <!-- 日期范围 -->
                             <el-date-picker v-else-if="item.fieldType === FilterEnum.DATE_RANGE" v-model="item.value"
                                 type="datetimerange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"
-                                :style="item.style" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+                                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss"
+                                v-bind="item.fieldAttr" />
 
                             <!-- 开关 -->
-                            <el-switch v-else-if="item.fieldType === FilterEnum.SWITCH" v-model="item.value" />
+                            <el-switch v-else-if="item.fieldType === FilterEnum.SWITCH" v-model="item.value"
+                                v-bind="item.fieldAttr" />
                         </el-form-item>
                     </el-col>
                     <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
@@ -269,7 +265,7 @@ onMounted(() => {
                 </el-row>
             </el-form>
         </section>
-        <section style="margin-bottom: 10px;" v-if="toolBar.actions.length > 0">
+        <section style="margin: 10px 0;" v-if="toolBar.actions.length > 0">
             <template v-for="(item, i) in toolBar.actions" :key="i">
                 <el-button v-if="store.hasPer(item.perKey)" :icon="item.icon" :type="item.type ?? ''"
                     @click="(e) => onToolBarEvent(item, e)" plain>

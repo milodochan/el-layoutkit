@@ -47,8 +47,8 @@ const onEvent = (val) => {
     props.item.command(val, props.item, formData)
 }
 // 组件更新
-const update = (val, item) => {
-    formData[item.field] = val
+const update = (val) => {
+    formData[props.item.field] = val
     onEvent(val)
 }
 </script>

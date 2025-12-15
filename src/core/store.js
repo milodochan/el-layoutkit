@@ -1,70 +1,112 @@
 import CryptoJS from 'crypto-js'
-import { getCurrentInstance } from 'vue'
 
 let dataCache = null
 
 const STORAGE_KEY = '__store__'
 const SECRET_KEY = '__store_secret__'
 
+// 初始结构
+// {
+//   permissions: [],
+//   perEnabled: true
+// }
+
+function encryptData(data) {
+  const SECRET = CryptoJS.lib.WordArray.random(32).toString()
+  localStorage.setItem(SECRET_KEY, SECRET)
+
+  const encrypted = CryptoJS.AES.encrypt(JSON.stringify(data), SECRET).toString()
+  localStorage.setItem(STORAGE_KEY, encrypted)
+
+  dataCache = data
+}
+
+function decryptData() {
+  const encrypted = localStorage.getItem(STORAGE_KEY)
+  const SECRET = localStorage.getItem(SECRET_KEY)
+
+  if (!encrypted || !SECRET) return null
+
+  try {
+    const bytes = CryptoJS.AES.decrypt(encrypted, SECRET)
+    const json = bytes.toString(CryptoJS.enc.Utf8)
+    return JSON.parse(json)
+  } catch (e) {
+    console.error('解密失败', e)
+    return null
+  }
+}
+
+
 const store = {
+
   /**
-   * 设置数据，同时生成新的 SECRET
+   * ⚡ set 只设置权限数组 !!!
    */
-  set(value) {
-    try {
-      // 生成新的 secret
-      const SECRET = CryptoJS.lib.WordArray.random(32).toString()
-      localStorage.setItem(SECRET_KEY, SECRET)
-
-      const stringValue = JSON.stringify(value)
-      const encrypted = CryptoJS.AES.encrypt(stringValue, SECRET).toString()
-      localStorage.setItem(STORAGE_KEY, encrypted)
-
-      dataCache = value  // 缓存 ✅
-    } catch (e) {
-      console.error('存储失败', e)
+  set(permissionList) {
+    const oldData = this.get() || {
+      permissions: [],
+      perEnabled: true
     }
+
+    const newData = {
+      ...oldData,
+      permissions: permissionList   // ✔ 只修改 permissions
+    }
+
+    encryptData(newData)
   },
 
   /**
-   * 读取最新数据
+   * ⚡ get 返回完整结构
    */
   get() {
     if (dataCache !== null) return dataCache
 
-    const encrypted = localStorage.getItem(STORAGE_KEY)
-    const SECRET = localStorage.getItem(SECRET_KEY)
+    const data = decryptData()
+    if (!data) return null
 
-    if (!encrypted || !SECRET) return null
-
-    try {
-      const bytes = CryptoJS.AES.decrypt(encrypted, SECRET)
-      const stringValue = bytes.toString(CryptoJS.enc.Utf8)
-      dataCache = JSON.parse(stringValue)
-      return dataCache
-    } catch (e) {
-      console.error('解密失败', e)
-      return null
-    }
+    dataCache = data
+    return dataCache
   },
 
   /**
    * 判断权限
    */
   hasPer(key) {
-    const instance = getCurrentInstance()
-    const isPerEnabled = instance?.appContext.config.globalProperties.$layoutkitPerEnabled
-    if (isPerEnabled) {
-      try {
-        if (dataCache === null) this.get()
-        if (!Array.isArray(dataCache)) return false
-        return dataCache.includes(key)
-      } catch (e) {
-        console.error('读取失败', e)
-        return false
-      }
+    const data = this.get()
+    if (!data) return false
+
+    const { permissions, perEnabled } = data
+    if (!perEnabled) return true    // 🔥 权限校验关闭 → 全放行
+
+    return Array.isArray(permissions) && permissions.includes(key)
+  },
+
+  /**
+   * 🔥 只修改权限开关 → 启用权限
+   */
+  enabledPer() {
+    const data = this.get() || {
+      permissions: [],
+      perEnabled: true
     }
-    return true
+
+    data.perEnabled = true
+    encryptData(data)
+  },
+
+  /**
+   * 🔥 只修改权限开关 → 禁用权限（超级管理员模式）
+   */
+  disabledPer() {
+    const data = this.get() || {
+      permissions: [],
+      perEnabled: false
+    }
+
+    data.perEnabled = false
+    encryptData(data)
   }
 }
 

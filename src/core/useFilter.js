@@ -23,51 +23,58 @@ export function useFilter() {
             )
         },
         register: (field, label = '') => {
-            const item = {
+            const item = reactive({
                 field,
-                label: label || field,
                 fieldType: FilterEnum.TEXT,
+                fieldAttr: {
+                    label: label || field,
+                    placeholder: `请输入${label || field}`,
+                    options: [],
+                    style: undefined,
+                },
                 fieldOperator: '=',
                 value: '',
                 defaultValue: '',
-                placeholder: `请输入${label || field}`,
-                options: [],
-                style: undefined,
-                required: false,
+                required: false
+            })
+
+            const columnApi = {
+                setAttr(attrs = {}) {
+                    if (typeof attrs !== 'object') return columnApi
+                    Object.assign(item.fieldAttr, attrs)
+                    return columnApi
+                },
                 setOptions(options) {
-                    this.fieldType = FilterEnum.SELECT
-                    this.options = options
-                    return this
+                    item.fieldType = FilterEnum.SELECT
+                    item.fieldAttr.options = options
+                    return columnApi
                 },
-                setStyle(style) {
-                    this.style = style
-                    return this
-                },
-                setFieldType(type) {
-                    this.fieldType = type
-                    return this
+                setType(type) {
+                    item.fieldType = type
+                    return columnApi
                 },
                 setValue(val) {
-                    this.value = val
-                    return this
+                    item.value = val
+                    return columnApi
                 },
                 setDefaultValue(val) {
-                    this.value = val
-                    this.defaultValue = val
-                    return this
+                    item.value = val
+                    item.defaultValue = val
+                    return columnApi
                 },
                 setOperator(operator) {
-                    this.fieldOperator = operator
-                    return this
+                    item.fieldOperator = operator
+                    return columnApi
                 },
                 setPlaceholder(placeholder) {
-                    this.placeholder = placeholder
-                    return this
+                    item.fieldAttr.placeholder = placeholder
+                    return columnApi
                 },
-                onRequire() { this.required = true; return this }
+                onRequire() { item.required = true; return columnApi }
             }
+
             _filter.value.push(item)
-            return item
+            return columnApi
         },
         registerBuildDataFunc: (fn) => {
             if (fn && typeof fn === 'function') {
