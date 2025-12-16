@@ -4,7 +4,7 @@
 
 # 安装（Installation）
 ```
-npm install @layoutkit/el-layoutkit:latest
+npm install @layoutkit/el-layoutkit@latest
 ```
 
 # 导出内容总览
