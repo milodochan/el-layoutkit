@@ -1,5 +1,5 @@
 import { FormEnum } from '../enum/FormEnum'
-import { readonly, markRaw, ref, inject, provide } from 'vue'
+import { readonly, markRaw, ref, inject, provide, reactive } from 'vue'
 
 /**
  * 注册 provide，用于表单项插槽映射
@@ -32,6 +32,7 @@ const useRowApi = (newRow) => {
           options: []
         },
         rules: [],
+        disabledLabel: false,
         hideFunc: () => true,
         attrFunc: null,
         command: () => { }
@@ -40,6 +41,10 @@ const useRowApi = (newRow) => {
       newRow.push(column)
 
       const columnApi = {
+        disabledLabel() {
+          column.disabledLabel = true
+          return columnApi
+        },
         setRule(rules) {
           column.rules = rules
           return columnApi

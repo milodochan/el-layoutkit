@@ -306,9 +306,8 @@ onMounted(() => {
                     @change="onPageChange" @size-change="onPageSizeChange" />
             </div>
         </section>
+        <LayoutPageDialog ref="dialogRef" :dialog="dialog" />
     </div>
-
-    <LayoutPageDialog ref="dialogRef" :dialog="dialog" />
 </template>
 
 <style scoped>

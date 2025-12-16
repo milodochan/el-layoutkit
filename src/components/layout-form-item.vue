@@ -9,6 +9,7 @@ const props = defineProps({
 
 // 配置和初始数据
 const formData = props.data
+const disabledLabel = props.item?.disabledLabel || false
 const field = props.item?.field
 const fieldType = props.item?.fieldType
 const fieldAttr = computed(() => {
@@ -54,7 +55,7 @@ const update = (val) => {
 </script>
 
 <template>
-    <el-form-item :label="fieldAttr.label" :prop="field">
+    <el-form-item :label="disabledLabel ? '' : fieldAttr.label" :prop="field" :label-width="disabledLabel ? 0 : 'auto'">
         <!-- ✅ 有 template：渲染动态组件, 此处判断是插槽还是组件  决定使用v-bind试试props -->
         <component v-if="component" :is="component" @update="(val) => update(val)"
             v-bind="isSlot ? { data: formData, fieldAttr: fieldAttr } : formData" />

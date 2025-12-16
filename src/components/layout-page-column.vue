@@ -36,9 +36,11 @@ const renderInfo = computed(() => resolve(props.template, props.data))
 </script>
 
 <template>
-    <span v-if="renderInfo.type === 'html'" v-html="renderInfo.content" />
-    <component v-if="renderInfo.type === 'component'" :is="renderInfo.component"
-        v-bind="isSlot ? { content: renderInfo.content, props: renderInfo.props } : renderInfo.props">
-        {{ renderInfo.content }}
-    </component>
+    <div>
+        <span v-if="renderInfo.type === 'html'" v-html="renderInfo.content" />
+        <component v-if="renderInfo.type === 'component'" :is="renderInfo.component"
+            v-bind="isSlot ? { content: renderInfo.content, props: renderInfo.props } : renderInfo.props">
+            {{ renderInfo.content }}
+        </component>
+    </div>
 </template>
