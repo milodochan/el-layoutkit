@@ -90,9 +90,13 @@ const loadData = async () => {
             : {}
 
         if (data.value?.component === 'form' && data.value?.formData) {
+            const formData = typeof data.value?.formData === "function"
+                ? await data.value.formData()
+                : structuredClone(toRaw(data.value.formData))
+
             propsData.value = {
                 ...data.value.propsData,
-                data: toRaw(data.value.formData)
+                data: toRaw(formData)
             }
         }
 

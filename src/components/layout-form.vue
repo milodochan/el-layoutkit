@@ -24,7 +24,6 @@ const formRef = ref(null)
 const localConfig = reactive(props.config ?? [])
 // 配置和初始数据
 const formData = reactive(props.data ?? {})
-console.log('formData', formData)
 // 动态生成 rules
 const rules = computed(() => {
     const r = {}

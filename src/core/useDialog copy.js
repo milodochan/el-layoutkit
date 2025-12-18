@@ -1,4 +1,4 @@
-import { reactive, markRaw, ref, inject, provide } from 'vue'
+import { reactive, markRaw, ref, inject, provide, toRaw } from 'vue'
 
 export function useDialog() {
     const _dialogs = ref([])
@@ -89,7 +89,7 @@ export function useDialog() {
             }
             const setForm = (propsData) => setComponent('form', propsData)
             const setFormData = (propsData) => {
-                data.formData = propsData
+                data.formData = structuredClone(toRaw(propsData))
                 return method
             }
             const show = () => {

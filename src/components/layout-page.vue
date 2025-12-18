@@ -227,7 +227,7 @@ onMounted(() => {
                 <!-- 上半行， 调整成自适应根据分辨率 -->
                 <el-row :gutter="20" v-if="tableFilter.data.length > 0">
                     <el-col v-for="(item, i) in filterForm" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
-                        <el-form-item :label="item.label">
+                        <el-form-item :label="item.fieldAttr.label">
                             <!-- 文本输入 -->
                             <el-input v-if="item.fieldType === FilterEnum.TEXT" v-model="item.value"
                                 :placeholder="item.placeholder" v-bind="item.fieldAttr" />
@@ -259,13 +259,15 @@ onMounted(() => {
                         </el-form-item>
                     </el-col>
                     <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
-                        <el-button type="primary" v-on:click="onFilterChange(true)">搜索</el-button>
-                        <el-button v-on:click="onFilterChange(false)">重置</el-button>
+                        <el-form-item>
+                            <el-button type="primary" v-on:click="onFilterChange(true)">搜索</el-button>
+                            <el-button v-on:click="onFilterChange(false)">重置</el-button>
+                        </el-form-item>
                     </el-col>
                 </el-row>
             </el-form>
         </section>
-        <section style="margin: 10px 0;" v-if="toolBar.actions.length > 0">
+        <section style="margin-bottom: 15px;" v-if="toolBar.actions.length > 0">
             <template v-for="(item, i) in toolBar.actions" :key="i">
                 <el-button v-if="store.hasPer(item.perKey)" :icon="item.icon" :type="item.type ?? ''"
                     @click="(e) => onToolBarEvent(item, e)" plain>

@@ -74,20 +74,30 @@ if (field.type === FormEnum.SELECT) { ... }
 
 # 快速开始（Usage）
 
-* 需要在项目中使用权限管理按钮等需要在main.js中设置
+* 需要在项目中使用权限管理相关设置
 ```js
-app.config.globalProperties.$layoutkitPerEnabled = true
-```
-* 如果开启权限，需要注入权限数据至store中
-```js
+# 全局设置
 import { store } from '@layoutkit/el-layoutkit'
+store.enabledPer() // 启用权限验证
 
-# 需要登录系统后加载权限数据时设置
+# 如果启用权限需要登录后传入权限数据，例如：
 api.getPers().then(res => {
   store.set(res.data)   // 请在登录系统后调用这个方法设置数据，数据格式要求未字符串数组
 })
 
+# 如果登录系统的是超管账号，需要放行权限，可以登录后使用如下代码，并且可以不用设置权限数据，例如
+api.login().then(res => {
+  if(res.isSuper) {
+    store.disabledPer()  // 关闭权限验证
+  }
+  else {
+    api.getPers().then(res => {
+      store.set(res.data)
+    })
+  }
+})
 ```
+
 * 后端有自己的筛选数据格式时，支持重写数据格式， items只有筛选有内容时才有数据，默认未空数组
 ```js
 app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items }
@@ -109,9 +119,11 @@ app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items 
         <LayoutPage :table="table" :filter="filter" :toolbar="toolbar" :tablebar="tablebar" :dialog="dialog" />
         <!--表格列示例-->
         <ColumnItemSlot name="name1">
-          <template #default="{ attrs }">
+          <template #default="{ attrs, content }">
+            <!--如果传入的是props属性，如下-->
             <el-tag type='info' v-if="attrs.gender === 0">男</el-tag>
-            <el-tag type='primary' v-if="attrs.gender === 1">女</el-tag>
+            <!--如果传入的是content属性，如下-->
+            <el-tag type='primary' v-if="content === 1">女</el-tag>
           </template>
         </ColumnItemSlot>
         <!--表单项示例-->
@@ -197,6 +209,7 @@ app.config.globalProperties.$layoutkitBuildDataFunc = (items) => { return items 
   table.setColumn('gender', '性别').setTemplate((item) => {
     return {
       component: 'name1',
+      content: item.gender,
       props: {
         gender: item.gender
       }
@@ -318,7 +331,7 @@ table.setColumn('name', '姓名').setAttr({ width: 150 }).setTemplate((row) => r
 
 ```js
 filter.register('name', '姓名')
-  .setFieldType(FilterEnum.TEXT)
+  .setType(FilterEnum.TEXT)
   .setPlaceholder('请输入姓名')
 ```
 
@@ -327,7 +340,7 @@ filter.register('name', '姓名')
 | 方法                               | 说明                     |
 | -------------------------------- | ---------------------- |
 | `setOptions(options: Array)`     | 设置下拉选项，自动切换为 SELECT 类型       |
-| `setFieldType(type: FilterEnum)` | 设置字段类型，参考包中FilterEnum枚举       |
+| `setType(type: FilterEnum)` | 设置字段类型，参考包中FilterEnum枚举       |
 | `setDefaultValue(val: any)`      | 设置默认值, 同时设置值, 重置时生效         |
 | `setValue(val: any)`             | 设置值                  |
 | `setOperator(operator: FilterOperatorEnum)`  | 设置查询操作符，参考包中FilterOperatorEnum枚举              |
@@ -423,23 +436,11 @@ toolbar.register('编辑')
 
 ## 5. dialog（弹窗管理）
 
-### register(title)
+### register(title = '')
 
 注册一个弹窗实例，返回链式操作对象。
 
-#### 属性
-
-| 属性 | 类型 | 说明 |
-|------|------|------|
-| `title` | string | 弹窗标题 |
-| `width` | string | 弹窗宽度（默认 `'50%'`） |
-| `fullscreen` | boolean | 是否全屏 |
-| `draggable` | boolean | 是否可拖拽 |
-| `withCancel` | boolean | 是否自动添加取消按钮 |
-| `_actions` | Array | 内部动作按钮存储 |
-| `actions` | Array | 动作按钮，自动生成取消按钮（如需） |
-
-#### 链式方法
+#### 方法
 
 | 方法 | 参数 | 返回值 | 说明 |
 |------|------|--------|------|
@@ -447,45 +448,44 @@ toolbar.register('编辑')
 | `setAttr(attrs)` | object | 当前对象 | 批量设置属性，如 title、width、fullscreen、draggable、withCancel、aliginCenter |
 | `setBtn(label, command, type, icon)` | string, Function, string, string | 当前对象 | 添加或覆盖按钮 |
 | `setComponent(comp, propsData)` | Component/Object/Function | 当前对象 | 设置弹窗组件及 propsData，支持异步 |
-| `setForm(propsData)` | Object/Function | 当前对象 | 快速设置表单组件 |
+| `setForm(propsData)` | Object | 当前对象 | useForm返回的表单对象 |
+| `setFormData(propsData)` | Object/Function | 当前对象 | 表单的字段对象/支持异步调用的表单数据接口 |
 | `show()` | - | 当前对象 | 显示弹窗并设置 dialog.instance |
 | `hide()` | - | 当前对象 | 隐藏弹窗 |
 | `destroy()` | - | - | 销毁弹窗，清空数据，重置 loading |
+| `disabledCancel()` | - | 当前对象 | 禁用取消按钮 |
 
-#### 动作按钮对象
+#### setBtn方法传入对象说明
 
 | 属性 | 类型 | 说明 |
 |------|------|------|
 | `label` | string | 按钮文本 |
 | `icon` | string | 图标 |
 | `type` | string | 类型，默认 `'info'` |
-| `command` | Function | 点击回调 |
+| `command` | Function | 点击回调，function 回传dialog对象以及内部组件的对象 |
 
 #### 使用示例
 
 ```js
 // 创建，使用表单的话，参考下节表单相关内容
-const myDialog = dialog.register('')
+const useForm = form.register()
+const myDialog = dialog.register()
   .setAttr({ width: '600px', fullscreen: false, draggable: true })
-  .setBtn('保存', async () => {
+  .setBtn('保存', async (dialogRef, compRef) => {
       await saveUser(formMap.get('userForm').data)
+      dialogRef.hide()
   }, 'primary')
-  .setForm({ name: '张三', age: 18 })
+  .setForm(useForm)
 // 新增示例
-myDialog.setTitle('新增用户').setForm({ }).show()
+myDialog.setTitle('新增用户').setFormData({ }).show()
 // 编辑示例
-myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
+myDialog.setTitle('用户信息').setFormData({ name: '张三', age: 21 }).show()
 ```
 
 ---
 
-## 6. formMap（表单管理）
+## 6. form（表单管理）
 ## 属性
-
-### list
-
-* 类型: `readonly(Array)`
-* 描述: 当前所有注册表单的列表（只读）。
 
 ### register(id = '')
 
@@ -515,7 +515,7 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
   ##### columnApi 方法
 
   * `setLabel(label)` - 设置显示标签。
-  * `setOptions(options)` - 设置选项列表, 传入的类型需要动态刷新的情况，传入ref对象。
+  * `setOptions(options)` - 设置选项列表, 传入的类型需要动态刷新的情况，传入ref对象, 默认会设置type为select类型，如需要其他类型，需要在后面调用setType。
   * `setType(type)` - 设置字段类型 (FormEnum)。
   * `setPlaceholder(text)` - 设置占位符文本。
   * `onRequire()` - 设置必填字段。
@@ -565,7 +565,7 @@ myDialog.setTitle('用户信息').setForm({ name: '张三', age: 21 }).show()
 完整示例
 
 ```js
-const { formMap, FormEnum } = createBaseConfig()
+const { form, FormEnum } = createBaseConfig()
 
 // 注册表单
 const userForm = formMap.register('userForm')
@@ -585,9 +585,9 @@ clonedForm.setData({ name: 'Bob' })
 
 ---
 
-## 7. keyMap（全局 key 注册管理）
+## 7. key（全局 key 注册管理）
 
-用于存储和获取权限、表单、对话框等 key 映射。
+用于存储和获取权限、表单、对话框等 key 映射， 注册后使用时参考toolbar、tablebar中的enabledPer方法。
 
 ### 方法
 
@@ -624,17 +624,16 @@ await message.notify('操作完成', '提示')
 
 ```ts
 FormEnum = {
-  INPUT_TEXT: 'input_text',
-  INPUT_TEXTAREA: 'input_textarea',
-  INPUT_NUMBER: 'input_number',
-  DATE_PICKER: 'date_picker',
-  TIME_PICKER: 'time_picker',
-  RADIO_BUTTON: 'radio',
-  CHECKBOX: 'checkbox',
-  SELECT: 'select',
-  MULTI_SELECT: 'multi_select',
-  TOGGLE_BUTTON: 'toggle',
-  SEGMENTED: 'segmented'
+    INPUT_TEXT: 'input_text',
+    INPUT_NUMBER: 'input_number',
+    INPUT_TEXTAREA: 'input_textarea',
+    DATE_PICKER: 'date_picker',
+    TIME_PICKER: 'time_picker',
+    RADIO_BUTTON: 'radio_button',
+    CHECKBOX: 'checkbox',
+    TOGGLE_BUTTON: 'toggle_button',
+    SELECT: 'select',
+    TREE_SELECT: 'tree_select'
 }
 ```
 

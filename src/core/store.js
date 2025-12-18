@@ -75,7 +75,7 @@ const store = {
    */
   hasPer(key) {
     const data = this.get()
-    if (!data) return false
+    if (!data) return true  // 无数据 → 全放行
 
     const { permissions, perEnabled } = data
     if (!perEnabled) return true    // 🔥 权限校验关闭 → 全放行

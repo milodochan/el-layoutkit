@@ -33,9 +33,9 @@ export function useFilter() {
                     style: undefined,
                 },
                 fieldOperator: '=',
-                value: '',
+                required: false,
                 defaultValue: '',
-                required: false
+                value: ''
             })
 
             const columnApi = {
