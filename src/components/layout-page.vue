@@ -235,6 +235,7 @@ onMounted(() => {
                             <!-- 数字输入 -->
                             <el-input-number v-else-if="item.fieldType === FilterEnum.NUMBER" v-model="item.value"
                                 :placeholder="item.placeholder" v-bind="item.fieldAttr" />
+
                             <!-- 下拉框 -->
                             <el-select v-else-if="item.fieldType === FilterEnum.SELECT" v-model="item.value"
                                 :placeholder="item.placeholder" v-bind="item.fieldAttr">

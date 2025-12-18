@@ -408,7 +408,7 @@ toolbar.register('新增')
 注册动作按钮，返回链式操作对象。
 
 ```js
-toolbar.register('编辑')
+tablebar.register('编辑')
   .setAttr({ type: 'primary', icon: 'Edit' })
   .enabledPer('edit')
   .hide((item) => item.status === 1)
