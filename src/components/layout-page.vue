@@ -230,15 +230,15 @@ onMounted(() => {
                         <el-form-item :label="item.fieldAttr.label">
                             <!-- 文本输入 -->
                             <el-input v-if="item.fieldType === FilterEnum.TEXT" v-model="item.value"
-                                :placeholder="item.placeholder" v-bind="item.fieldAttr" />
+                                v-bind="item.fieldAttr" />
 
                             <!-- 数字输入 -->
                             <el-input-number v-else-if="item.fieldType === FilterEnum.NUMBER" v-model="item.value"
-                                :placeholder="item.placeholder" v-bind="item.fieldAttr" />
+                                v-bind="item.fieldAttr" />
 
                             <!-- 下拉框 -->
                             <el-select v-else-if="item.fieldType === FilterEnum.SELECT" v-model="item.value"
-                                :placeholder="item.placeholder" v-bind="item.fieldAttr">
+                                v-bind="item.fieldAttr">
                                 <el-option v-for="option in item.options" :key="option.value" :label="option.label"
                                     :value="option.value" />
                             </el-select>
